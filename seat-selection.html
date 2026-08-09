@@ -245,6 +245,30 @@
 
     .field input::placeholder { color: #9fa8b6; }
 
+    .field select {
+      background-color: #000;
+      color: #fff;
+    }
+
+    .field select option {
+      background-color: #000;
+      color: #fff;
+    }
+
+    .total-cost-field {
+      margin-bottom: 15px;
+    }
+
+    .total-cost {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+    }
+
     .submit-btn {
       width: 100%;
       padding: 14px 18px;
@@ -386,6 +410,11 @@
           <input id="contact" name="contact" type="tel" placeholder="01XXXXXXXXX" required />
         </div>
 
+        <div class="field total-cost-field">
+          <label>Total Cost</label>
+          <div id="totalCost" class="total-cost">BDT 0.00</div>
+        </div>
+
         <div class="field">
           <label for="paymentMethod">Payment Method</label>
           <select id="paymentMethod" name="paymentMethod" required>
@@ -430,6 +459,7 @@
     const receiptCard = document.getElementById('receiptCard');
     const receiptBody = document.getElementById('receiptBody');
     const printBtn = document.getElementById('printBtn');
+    const totalCostEl = document.getElementById('totalCost');
     const maxSeats = 4;
     const selectedSeats = [];
     const seatButtons = new Map();
@@ -478,6 +508,16 @@
       return button;
     }
 
+    function getTicketPrice() {
+      return Number(tripDocData?.fare ?? 0);
+    }
+
+    function updateTotalCostDisplay() {
+      if (!totalCostEl) return;
+      const total = getTicketPrice() * selectedSeats.length;
+      totalCostEl.textContent = `BDT ${total.toFixed(2)}`;
+    }
+
     function syncSeatStyles() {
       for (const [label, button] of seatButtons.entries()) {
         button.classList.toggle('selected', selectedSeats.includes(label));
@@ -487,6 +527,7 @@
       }
       selCount.textContent = String(selectedSeats.length);
       submitBtn.disabled = selectedSeats.length === 0;
+      updateTotalCostDisplay();
     }
 
     function toggleSeat(label) {
@@ -579,6 +620,7 @@
           const origin = tripDocData.origin || 'Unknown';
           const destination = tripDocData.destination || 'Unknown';
           tripMeta.textContent = `Trip ID: ${tripId} | ${origin} to ${destination} | Available seats: ${available}`;
+          updateTotalCostDisplay();
         }
       } catch (error) {
         console.error('Trip load failed', error);
