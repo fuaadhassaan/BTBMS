@@ -1,189 +1,802 @@
-/* Smooth page scrolling */
-html { scroll-behavior: smooth; }
-
-/* Base */
 :root {
-  --bg: #000;
-  --fg: #fff;
-  --muted: #c7c7c7;
-  --accent: #00aaff;            /* you can swap to red for Admin style */
-  --btn-bg: #111;
-  --btn-bg-hover: #1b1b1b;
-  --border: #333;
+  color-scheme: dark;
+
+  /* Dark is the default here as it is in the consoles. The values are
+     the ones this page already used; the light theme below is the only
+     new thing. The blues are not in here — the landing page keeps its
+     colour in both themes. */
+  --ink: #02040a;
+  --ink-1: #02030a;
+  --ink-2: #060b16;
+  --ink-3: #070d14;
+  --text: #f5f7fb;
+  --text-2: #d7e0ff;
+  --text-3: #d1d8f8;
+  --veil-top: rgba(5, 9, 17, 0.8);
+  --veil-bottom: rgba(2, 4, 10, 0.9);
+  --raise: rgba(255, 255, 255, 0.08);
+  --raise-line: rgba(255, 255, 255, 0.12);
+  --raise-line-soft: rgba(255, 255, 255, 0.1);
+  --spark-1: rgba(255, 255, 255, 0.08);
+  --spark-2: rgba(255, 255, 255, 0.05);
+  --footer: rgba(9, 12, 18, 0.95);
+  --on-fill: #fff;
+  --button-fill: rgba(27, 33, 74, 0.9);
+
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--ink);
+  color: var(--text);
 }
 
-* { box-sizing: border-box; }
+/* =============================================================
+   The light theme
 
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  color: var(--fg);
-  background: var(--bg);
-}
+   The same page on paper. The blue stays blue: the hero, the
+   Explore button and the four access links are the identity of
+   this page and do not belong to a theme.
+   ============================================================= */
+:root[data-theme='light'] {
+  color-scheme: light;
 
-/* Main wrapper */
-.main-section { width: 100%; }
-
-/* ---------------- Banner (hero) ---------------- */
-.banner {
-  height: 70vh; /* visible hero only; rest of page not covered */
-  width: 100%;
-  display: grid;
-  place-items: center;
-  position: relative;
-
-  /* Set your image path here */
-  background-image: url('hvm1.png'); /* <-- change if needed */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* Dark overlay for readability */
-.banner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
+  --ink: #f2f5fb;
+  --ink-1: #ffffff;
+  --ink-2: #eaeff8;
+  --ink-3: #e4eaf5;
+  --text: #101a2e;
+  --text-2: #26344f;
+  --text-3: #38466a;
+  --veil-top: rgba(255, 255, 255, 0.72);
+  --veil-bottom: rgba(240, 244, 251, 0.86);
+  --raise: rgba(16, 26, 46, 0.05);
+  --raise-line: rgba(16, 26, 46, 0.14);
+  --raise-line-soft: rgba(16, 26, 46, 0.12);
+  --spark-1: rgba(255, 255, 255, 0.55);
+  --spark-2: rgba(255, 255, 255, 0.4);
+  --footer: rgba(255, 255, 255, 0.92);
+  --on-fill: #fff;
+  /* The Log In and Book buttons carry white lettering in both themes, so its
+     fill stays dark enough to read on. */
+  --button-fill: rgba(42, 76, 170, 0.95);
 }
 
-/* Soft fade into black at bottom of banner */
-.banner::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: -48px;
-  height: 140px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000 92%);
-}
-
-.banner-content {
-  position: relative;
-  text-align: center;
-  padding: 0 24px;
-  max-width: 900px;
-}
-
-.banner-content h1 {
-  margin: 0 0 8px;
-  font-size: clamp(28px, 5vw, 46px);
-  letter-spacing: 0.5px;
-}
-
-.btbms-subtitle {
-  margin: 2px 0 12px;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 2px;
-}
-
-.banner-content p {
-  margin: 0 auto 20px;
-  max-width: 760px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.explore-btn {
-  padding: 12px 22px;
-  border-radius: 8px;
-  border: 1px solid var(--accent);
-  background: transparent;
-  color: var(--fg);
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .08s ease, background .15s ease, border-color .15s ease;
-}
-.explore-btn:hover { background: rgba(0,0,0,0.35); transform: translateY(-1px); }
-.explore-btn:active { transform: translateY(0); }
-
-/* ---------------- Explore section ---------------- */
-.explore {
-  position: relative;
-  padding: 88px 24px 48px; /* top padding compensates for banner fade overlap */
-  text-align: center;
-  animation: fadeUp 700ms ease 80ms both;
-}
-
-.explore h2 {
-  font-size: clamp(22px, 3.5vw, 30px);
-  margin: 0 0 18px;
-}
-
-.access-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: center;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.btn {
-  display: inline-block;
-  padding: 12px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--btn-bg);
-  color: var(--fg);
-  text-decoration: none;
-  font-weight: 600;
-  transition: background .15s ease, border-color .15s ease, transform .08s ease;
-}
-.btn:hover {
-  background: var(--btn-bg-hover);
-  border-color: var(--accent);
-  transform: translateY(-1px);
-}
-.btn:active { transform: translateY(0); }
-
-/* Subtle enter animation */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .explore { animation: none; }
-}
-
-/* ---------------- Footer ---------------- */
-footer {
-  border-top: 1px solid var(--border);
-  background: #0a0a0a;
-  color: #ff4b4b;
-  text-align: center;
-  padding: 16px 10px;
-  font-size: 14px;
-}
-.footer-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-footer a {
-  color: #ff4b4b;
-  text-decoration: none;
-}
-footer a:hover { text-decoration: underline; }
-.github-link {
+/* The switch, top right, matching the consoles'. */
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  color: #fff;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--raise-line);
+  border-radius: 10px;
+  background: var(--raise);
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
-.github-link:hover {
-  opacity: 0.85;
+
+.theme-toggle:hover {
+  background: rgba(90, 140, 255, 0.18);
+  border-color: rgba(90, 140, 255, 0.55);
+}
+
+.theme-toggle:active {
+  transform: scale(0.94);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid #5a8cff;
+  outline-offset: 2px;
+}
+
+.theme-toggle .theme-sun {
+  display: none;
+}
+
+:root[data-theme='light'] .theme-toggle .theme-sun {
+  display: inline;
+}
+
+:root[data-theme='light'] .theme-toggle .theme-moon {
+  display: none;
+}
+
+/* The clock and the switch sit together at the end of the top row. */
+.top-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+html {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: radial-gradient(circle at top, rgba(67, 118, 255, 0.22), transparent 24%),
+    linear-gradient(180deg, var(--ink-1) 0%, var(--ink-2) 40%, var(--ink-3) 100%);
+}
+
+/* No bar down the right-hand side.
+
+   This page is two screenfuls and says so: the opening has a scroll
+   cue on it and a button that goes to the same place. A bar as well
+   is just a line of furniture across a front door, and it moved the
+   hero sideways by its own width on the way in.
+
+   The scrolling itself is untouched — wheel, keys, touch and the two
+   links all still work. Only the bar is gone.
+
+   Both ways of saying it are here because neither covers everything.
+   `scrollbar-width` is the standard property and Chromium honours it
+   from 121, Firefox throughout; Safari does not support it at all and
+   takes the pseudo-element instead. Chromium ignores the
+   pseudo-element once the standard property is set, which is fine —
+   by then it is obeying the standard one. */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.page-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(77, 132, 255, 0.24), transparent 22%),
+    radial-gradient(circle at 80% 20%, var(--spark-1), transparent 18%),
+    radial-gradient(circle at 50% 90%, var(--spark-2), transparent 20%);
+  opacity: 0.9;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--veil-top), var(--veil-bottom));
+}
+
+.hero-content {
+  position: relative;
+  max-width: 980px;
+  text-align: center;
+  z-index: 1;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 20px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.brand-tag {
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #5a8cff;
+}
+
+.brand-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.clock {
+  padding: 10px 18px;
+  background: var(--raise);
+  border: 1px solid var(--raise-line);
+  border-radius: 999px;
+  min-width: 110px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+h1 {
+  margin: 0;
+  /* Sized for the full centre name. At the old 4.8rem this ran to three
+     lines in the 980px hero and to five on a phone. */
+  font-size: clamp(1.9rem, 4.2vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+/* The two halves of the headline, each on its own line.
+
+   `text-wrap: balance` used to decide where the break went, and it
+   went by measure rather than by meaning — "English Language Resources
+   / Center Management System" cuts the name of the centre in half.
+   Saying where the line ends is not something balancing can be asked
+   to do, so the break is in the markup and balancing is off. Each half
+   still wraps by itself on a screen too narrow to hold it. */
+h1 .line {
+  display: block;
+}
+
+.subtitle {
+  margin: 20px auto 0;
+  max-width: 720px;
+  font-size: 1.1rem;
+  color: var(--text-3);
+  line-height: 1.8;
+}
+
+.main-content {
+  padding: 60px 20px 40px;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------
+   The opening
+
+   Each line starts a little low and slightly faded and settles
+   into place, one after another, in reading order. The delay is
+   per element, set in the markup, so adding a line to the hero
+   does not mean editing a timeline here.
+
+   .is-in is added by the script on the first frame rather than
+   the animation simply running, so nothing is mid-flight before
+   the stylesheet has arrived.
+   ------------------------------------------------------------- */
+/* An animation, not a class the script has to add.
+
+   It was the latter first, and that is a way of hiding the page: the
+   lines sat at opacity 0 waiting for JavaScript, so a module that
+   failed to load — or a browser that would not run one — left the
+   heading invisible rather than unanimated. The words are the point
+   and the movement is decoration, so the movement is what depends on
+   anything.
+
+   `both` holds the opening state through the delay and the finished
+   state afterwards, which is what staggers them without a timeline. */
+.reveal {
+  /* `linear`, because the easing is already in the keyframes. */
+  animation: reveal 1.44s linear var(--in, 0s) both;
+
+  /* The blur and the transform are the whole animation, so the
+     compositor is told in advance. Dropped at the end — a layer held
+     for the life of the page costs memory for nothing. */
+  will-change: opacity, transform, filter;
+}
+
+/* A line arrives out of focus, a little low, a little small and tipped
+   slightly back, and settles. Each of the five properties runs the
+   same curve; the tilt is in degrees and the blur in pixels, and both
+   happen to start at 20. */
+@keyframes reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) rotateX(-20deg) scale(0.85);
+    filter: blur(20px);
+  }
+  8.3% {
+    opacity: 0.26;
+    transform: translateY(44.16px) rotateX(-14.72deg) scale(0.8896);
+    filter: blur(14.72px);
+  }
+  16.7% {
+    opacity: 0.59;
+    transform: translateY(24.77px) rotateX(-8.26deg) scale(0.9381);
+    filter: blur(8.26px);
+  }
+  25% {
+    opacity: 0.75;
+    transform: translateY(14.8px) rotateX(-4.93deg) scale(0.963);
+    filter: blur(4.93px);
+  }
+  33.3% {
+    opacity: 0.86;
+    transform: translateY(8.51px) rotateX(-2.84deg) scale(0.9787);
+    filter: blur(2.84px);
+  }
+  41.7% {
+    opacity: 0.92;
+    transform: translateY(4.61px) rotateX(-1.54deg) scale(0.9885);
+    filter: blur(1.54px);
+  }
+  50% {
+    opacity: 0.96;
+    transform: translateY(2.32px) rotateX(-0.77deg) scale(0.9942);
+    filter: blur(0.77px);
+  }
+  58.3% {
+    opacity: 0.98;
+    transform: translateY(1.3px) rotateX(-0.43deg) scale(0.9967);
+    filter: blur(0.43px);
+  }
+  66.7% {
+    opacity: 0.99;
+    transform: translateY(0.63px) rotateX(-0.21deg) scale(0.9984);
+    filter: blur(0.21px);
+  }
+  75% {
+    opacity: 0.995;
+    transform: translateY(0.3px) rotateX(-0.1deg) scale(0.9993);
+    filter: blur(0.1px);
+  }
+  83.3% {
+    opacity: 0.998;
+    transform: translateY(0.13px) scale(0.9997);
+    filter: blur(0.04px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    will-change: auto;
+  }
+}
+
+.hero-eyebrow {
+  margin: 0 0 10px;
+  font-size: clamp(0.82rem, 1.6vw, 0.98rem);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: #5a8cff;
+}
+
+/* The cue that there is something below. It breathes rather than
+   bounces: the page is a front door, not a toy. */
+.hero-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  margin: 38px auto 0;
+  color: var(--text-3);
   text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
-.github-link svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
+
+.hero-scroll:hover {
+  color: var(--text);
+}
+
+.hero-scroll-mouse {
+  position: relative;
+  width: 24px;
+  height: 38px;
+  border: 1px solid currentColor;
+  border-radius: 13px;
+  opacity: 0.75;
+}
+
+.hero-scroll-mouse::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: 3px;
+  height: 7px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: scroll-wheel 1.9s ease-in-out infinite;
+}
+
+@keyframes scroll-wheel {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  55% { transform: translateY(11px); opacity: 0.15; }
+}
+
+/* Somebody who has asked for less movement gets the page, not the
+   performance. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .hero-scroll-mouse::after,
+  .role-choice {
+    animation: none;
+  }
+
+  /* `animation: none` leaves whatever the rule underneath says, and
+     for a line that opens blurred and tilted that would be the
+     opening pose, held for ever. It is put at the finish instead. */
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.access-panel {
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.access-panel h2 {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  margin: 0 0 26px;
+}
+
+.access-note {
+  margin: 0 auto 26px;
+  max-width: 44ch;
+  color: var(--text-3);
+}
+
+/* -------------------------------------------------------------
+   One sign-in
+
+   There were four doors, one per role, and everybody had to know
+   which was theirs. Now there is one: the ID says which consoles
+   it can open, and those are offered.
+   ------------------------------------------------------------- */
+.login-form {
+  width: min(420px, 100%);
+  margin: 0 auto;
+  text-align: left;
+  display: grid;
+  gap: 18px;
+}
+
+.login-form .field {
+  display: grid;
+  gap: 7px;
+}
+
+.field-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.login-form .control {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--raise-line);
+  background: var(--raise);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.login-form .control:focus {
+  outline: none;
+  border-color: rgba(90, 140, 255, 0.8);
+  background: var(--raise);
+}
+
+.login-form .control::placeholder {
+  color: var(--text-3);
+  opacity: 0.7;
+}
+
+.password-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: var(--text);
+}
+
+.btn-login {
+  padding: 15px 24px;
+  border: 1px solid rgba(90, 140, 255, 0.8);
+  border-radius: 999px;
+  background: var(--button-fill);
+  color: var(--on-fill);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  background: rgba(64, 124, 255, 0.98);
+  box-shadow: 0 16px 36px rgba(34, 85, 190, 0.28);
+}
+
+.btn-login[disabled] {
+  opacity: 0.7;
+  cursor: default;
+  transform: none;
+}
+
+/* -------------------------------------------------------------
+   The roles an ID can open
+
+   Each in the colour of the console it leads to, so somebody who
+   holds two knows which door they are taking before they take it.
+   ------------------------------------------------------------- */
+.role-choice {
+  display: grid;
+  gap: 9px;
+  animation: role-in 0.3s ease both;
+}
+
+/* `display: grid` above would otherwise beat the hidden attribute. */
+.role-choice[hidden] {
+  display: none;
+}
+
+@keyframes role-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.role-choice-label {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.role-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.role-button {
+  flex: 1 1 auto;
+  min-width: 96px;
+  padding: 11px 16px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--role-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--role-accent) 12%, transparent);
+  color: var(--role-text);
+  font-size: 0.94rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+
+.role-button:hover {
+  background: color-mix(in srgb, var(--role-accent) 22%, transparent);
+  border-color: var(--role-accent);
+}
+
+.role-button:active {
+  transform: scale(0.97);
+}
+
+/* The one being taken, filled rather than outlined. */
+.role-button.is-chosen {
+  background: var(--role-accent);
+  border-color: var(--role-accent);
+  color: #0b1020;
+}
+
+.status-line {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  color: var(--text-3);
+}
+
+.status-line[data-tone='error'] { color: #ff8f8f; }
+.status-line[data-tone='warn'] { color: #ffcf6b; }
+.status-line[data-tone='good'] { color: #47d59b; }
+
+.site-footer {
+  padding: 20px;
+  background: var(--footer);
+  text-align: center;
+  color: #8fb7ff;
+  font-size: 0.95rem;
+}
+
+/* Who made it, whose idea it was, how to reach somebody — three lines
+   read as one block rather than as three paragraphs. */
+.foot-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.9;
+}
+
+.footer-mail {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.footer-mail:hover,
+.footer-mail:focus-visible {
+  border-bottom-color: currentColor;
+}
+
+html {
+  /* Safari enlarges text in landscape otherwise */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@supports (height: 100dvh) {
+  /* 100vh on a phone measures the window with the address bar hidden,
+     so the hero ends up taller than the screen until it is. dvh is the
+     height actually available, which is what "one screenful" means. */
+  .hero {
+    min-height: 100dvh;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .brand {
+    align-items: center;
+  }
+
+  .hero {
+    padding: 32px 16px;
+  }
+
+  .main-content,
+  .access-panel {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Roles side by side become roles stacked, each wide enough to hit
+     without aiming. */
+  .role-buttons {
+    flex-direction: column;
+  }
+
+  .role-button {
+    min-height: 48px;
+  }
+
+  .btn-login {
+    min-height: 52px;
+  }
+
+  .site-footer {
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Scrollbars: slim, the accent for the thumb, nothing for the track,
+   no arrows -- the same as every console. Chromium is given the
+   pseudo-elements and Firefox the standard properties, because
+   Chromium drops the pseudo-elements once a standard property is set.
+   --------------------------------------------------------------- */
+:root {
+  --scroll-thumb: rgba(75, 134, 255, 0.38);
+  --scroll-thumb-hover: rgba(75, 134, 255, 0.62);
+}
+
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--scroll-thumb);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  background-clip: content-box;
+}
+
+/* ---------------------------------------------------------------
+   BTBMS additions: the passenger's way in, and the line between it
+   and the staff sign-in.
+   --------------------------------------------------------------- */
+.btn-book {
+  display: inline-block;
+  min-width: min(420px, 100%);
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn-book:focus-visible,
+.btn-login:focus-visible {
+  outline: 2px solid #5a8cff;
+  outline-offset: 3px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(420px, 100%);
+  margin: 56px auto 40px;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--raise-line);
 }

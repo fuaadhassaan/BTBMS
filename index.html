@@ -2,95 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BTBMS - Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTBMS | Bus Ticket Booking &amp; Management System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%8C%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="index.css" />
+
+  <!-- Set before the first paint so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('btbms-theme');
+        document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
-  <main class="main-section">
-    <!-- HERO / BANNER -->
-    <section class="banner" id="home" aria-label="BTBMS hero banner">
-      <div class="banner-content">
-        <h1>Bus Ticket Booking &amp; Management System</h1>
-        <div class="btbms-subtitle">BTBMS</div>
-        <p>An easy, reliable and fast ticket booking service with ticket management features — LIKE NEVER BEFORE!</p>
-        <button class="explore-btn" type="button" onclick="scrollToExplore()">Explore</button>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="top-row">
+          <div class="brand">
+            <span class="brand-tag">BTBMS</span>
+            <span class="brand-subtitle">Bus Ticket Booking &amp; Management</span>
+          </div>
+          <div class="top-row-right">
+            <div class="clock" id="landing-clock" aria-label="Current time in Bangladesh"
+                 title="Bangladesh Standard Time (UTC+6)">00:00:00</div>
+            <button type="button" class="theme-toggle" data-theme-toggle
+                    title="Switch between dark and light"
+                    aria-label="Switch between dark and light">
+              <span class="theme-moon" aria-hidden="true">&#9790;</span>
+              <span class="theme-sun" aria-hidden="true">&#9728;</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="hero-eyebrow reveal" style="--in: 0s">Search &middot; Book &middot; Travel</p>
+        <h1 class="reveal" style="--in: 0.16s">
+          <span class="line">Bus Ticket Booking</span>
+          <span class="line">&amp; Management System</span>
+        </h1>
+        <p class="subtitle reveal" style="--in: 0.32s">
+          An easy, reliable and fast ticket booking service with ticket management features &mdash; like never before.
+        </p>
+
+        <a href="#access" class="hero-scroll reveal" style="--in: 0.52s"
+           aria-label="Scroll down to book or sign in">
+          <span class="hero-scroll-mouse" aria-hidden="true"></span>
+          <span class="hero-scroll-text">Scroll to get started</span>
+        </a>
       </div>
-    </section>
-    
-    
+    </header>
 
-    <!-- EXPLORE -->
-    <section class="explore" id="explore" aria-label="Choose role">
-      <h2>Select Your Access</h2>
-      <div class="access-buttons">
-        <a class="btn" href="admin.html">Admin</a>
-        <a class="btn" href="cmanager.html">Counter Manager</a>
-        <a class="btn" href="ticket-booking.html">Passenger's Ticket Booking System</a>
-      </div>
-    </section>
-  </main>
+    <main class="main-content" id="access">
+      <section class="access-panel">
+        <h2>Book a ticket</h2>
+        <p class="access-note">
+          Travelling? Search buses by city and date, pick up to four seats and pay &mdash; no sign-in needed.
+        </p>
+        <a class="btn-login btn-book" href="ticket-booking.html">Book a Ticket</a>
 
-  <!-- Footer -->
-  <footer>
-    <div class="footer-content">
-      <span>All Rights Reserved by Md. Fuad Hasan© | For enquiries, email at: <a href="mailto:fuaadhassaan@gmail.com">fuaadhassaan@gmail.com</a></span>
-      <a class="github-link" href="https://github.com/fuaadhassaan" target="_blank" rel="noopener noreferrer" aria-label="Visit my GitHub profile">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 .5A12 12 0 0 0 0 12.6c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.3 1.8 1.3 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.4-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a10.9 10.9 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.3.8 1 .8 2v3c0 .3.2.7.8.6A12 12 0 0 0 24 12.6 12 12 0 0 0 12 .5Z"/>
-        </svg>
-      </a>
-    </div>
-  </footer>
+        <div class="divider" role="separator"><span>Staff</span></div>
 
-  <script>
-    function scrollToExplore() {
-      document.getElementById("explore").scrollIntoView({ behavior: "smooth" });
-    }
-  </script>
-  <!-- live data display removed from homepage; trips render on trip-results.html -->
-  <script>
-  (() => {
-    const clockId = 'bd-clock';
-    const timeZone = 'Asia/Dhaka';
+        <h2>Sign in</h2>
+        <p class="access-note">
+          One sign-in for Admins and Counter Managers. Enter your User ID and the console you can open will be offered.
+        </p>
 
-    function formatTime(date) {
-      return new Intl.DateTimeFormat('en-GB', {
-        timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-      }).format(date);
-    }
+        <form class="login-form" id="landing-login" novalidate>
+          <div class="field">
+            <label class="field-label" for="landing-user">User ID</label>
+            <input class="control" id="landing-user" name="userId"
+                   autocomplete="username" autocapitalize="characters" spellcheck="false"
+                   placeholder="Enter your User ID" required />
+          </div>
 
-    function ensureClock() {
-      let clock = document.getElementById(clockId);
-      if (!clock) {
-        clock = document.createElement('div');
-        clock.id = clockId;
-        clock.setAttribute('aria-live', 'polite');
-        clock.setAttribute('title', 'Bangladesh Standard Time (UTC+6)');
-        clock.style.position = 'fixed';
-        clock.style.top = '16px';
-        clock.style.right = '16px';
-        clock.style.zIndex = '9999';
-        clock.style.padding = '10px 14px';
-        clock.style.borderRadius = '999px';
-        clock.style.background = 'rgba(0, 0, 0, 0.82)';
-        clock.style.color = '#fff';
-        clock.style.font = '600 14px/1.1 Arial, sans-serif';
-        clock.style.letterSpacing = '0.08em';
-        clock.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.25)';
-        clock.style.pointerEvents = 'none';
-        document.body.appendChild(clock);
-      }
-      const update = () => { clock.textContent = formatTime(new Date()); };
-      update();
-      window.setInterval(update, 1000);
-    }
+          <div class="role-choice" id="landing-roles" hidden>
+            <p class="role-choice-label">Log in as</p>
+            <div class="role-buttons" id="landing-role-buttons"></div>
+          </div>
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', ensureClock, { once: true });
-    } else {
-      ensureClock();
-    }
-  })();
-  </script>
+          <div class="field">
+            <label class="field-label" for="landing-password">Password</label>
+            <div class="password-row">
+              <input class="control" id="landing-password" name="password" type="password"
+                     autocomplete="current-password" placeholder="Enter your password" required />
+              <button type="button" class="password-toggle" id="landing-password-toggle"
+                      aria-controls="landing-password" aria-pressed="false"
+                      aria-label="Show password" title="Show password">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path fill="currentColor" d="M12 5c-5 0-9 4.5-9 7s4 7 9 7 9-4.5 9-7-4-7-9-7zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-login" type="submit" id="landing-submit">Log In</button>
+
+          <p class="status-line" id="landing-status" role="status"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="foot-line">Developed &amp; All Rights Reserved by Md. Fuad Hasan&copy;</p>
+      <p class="foot-line">For enquiries, email at:
+        <a class="footer-mail" href="mailto:fuaadhassaan@gmail.com">fuaadhassaan@gmail.com</a> |
+        <a class="profile-link" href="https://github.com/fuaadhassaan" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg></a>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="index.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import { db } from './firebase-init.js';
+import { HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
 import {
   collection,
   doc,
@@ -115,9 +116,30 @@ function setLoginMessage(message) {
   els.loginMessage.textContent = message || '';
 }
 
-function showLogin() {
-  els.loginView.classList.remove('hidden');
-  els.appView.classList.add('hidden');
+function showLogin(reason) {
+  // Signing in happens on the landing page now; send the person there,
+  // with the reason when there is one.
+  try {
+    if (reason) sessionStorage.setItem(SIGNIN_ERROR_KEY, reason);
+  } catch (error) {
+    /* nothing to pass on */
+  }
+  window.location.replace('index.html#access');
+}
+
+// The sign-in handed over by the landing page, read once and cleared.
+function takeHandoff(role) {
+  let handoff = null;
+  try {
+    handoff = JSON.parse(sessionStorage.getItem(HANDOFF_KEY) || 'null');
+    sessionStorage.removeItem(HANDOFF_KEY);
+  } catch (error) {
+    return null;
+  }
+  if (!handoff || handoff.role !== role) return null;
+  // A stale hand-off (older than two minutes) is not trusted.
+  if (!handoff.at || Date.now() - handoff.at > 120000) return null;
+  return handoff;
 }
 
 function showApp() {
@@ -769,6 +791,16 @@ function bootstrap() {
       renderDashboard();
     }
   }, 1000);
+
+  const handoff = takeHandoff('admin');
+  if (handoff) {
+    if (handoff.userId === ADMIN_USER && handoff.password === ADMIN_PASS) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: handoff.userId, loggedInAt: Date.now() }));
+    } else {
+      showLogin('Wrong User ID or password.');
+      return;
+    }
+  }
 
   const session = localStorage.getItem(SESSION_KEY);
   if (session) {
