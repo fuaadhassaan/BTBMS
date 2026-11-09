@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
-  <link rel="modulepreload" href="firebase-init.js" />
-  <link rel="modulepreload" href="schedule.js" />
-  <link rel="modulepreload" href="timetable.js" />
-  <link rel="stylesheet" href="public.css" />
+  <link rel="modulepreload" href="database.js" />
+  <link rel="modulepreload" href="config.js" />
+  <link rel="modulepreload" href="passenger.js" />
+  <link rel="stylesheet" href="passenger.css" />
   <!-- Before the first paint, so the page never flashes the wrong theme. -->
   <script>
     (function () {
@@ -27,7 +27,7 @@
     })();
   </script>
 </head>
-<body>
+<body data-page="results">
   <div class="backdrop" aria-hidden="true"></div>
 
   <nav class="topbar" aria-label="Site">
@@ -69,134 +69,6 @@
     </section>
   </main>
 
-  <script src="public.js"></script>
-  <script type="module">
-    import { db } from './firebase-init.js';
-    import { collection, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
-    import { bookingWindow, inWindow, hasDeparted, dhakaNow, shortTime, ensureSchedule, BOOKING_WINDOW_DAYS } from './schedule.js';
-
-    const params = new URLSearchParams(window.location.search);
-    const from = (params.get('from') || '').toLowerCase();
-    const to = (params.get('to') || '').toLowerCase();
-    const date = params.get('date') || '';
-    const container = document.getElementById('resultsContainer');
-
-    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => (
-      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
-    ));
-
-    const busIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM18 11H6V6h12z"/></svg>';
-    const arrowIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>';
-
-    // Heading: "Dhaka → Sylhet", with the date in its own chip.
-    const fromLabel = params.get('from') || 'Anywhere';
-    const toLabel = params.get('to') || 'Anywhere';
-    document.getElementById('resultsHeading').innerHTML =
-      `${escapeHtml(fromLabel)} ${arrowIcon} ${escapeHtml(toLabel)}`;
-    if (date) {
-      const chip = document.getElementById('resultsDate');
-      const pretty = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-        .format(new Date(date + 'T00:00:00Z'));
-      chip.querySelector('span').textContent = pretty;
-      chip.hidden = false;
-    }
-
-    // Only the booking window is on sale; anything else is filtered out.
-    function matchesSearch(trip) {
-      const okFrom = !from || (trip.origin || '').toLowerCase() === from;
-      const okTo = !to || (trip.destination || '').toLowerCase() === to;
-      const okDate = !date || (trip.travel_date || '') === date;
-      return okFrom && okTo && okDate && inWindow(trip.travel_date, bookingWindow());
-    }
-
-    function emptyState(title, text) {
-      container.innerHTML = `
-        <div class="glass empty">
-          ${busIcon}
-          <h3>${title}</h3>
-          <p>${text}</p>
-          <a class="btn" href="ticket-booking.html">Change search</a>
-        </div>`;
-    }
-
-    function renderTrips(trips) {
-      if (!trips.length) {
-        emptyState('No trips on this date', 'Try another date or route &mdash; new trips are added regularly.');
-        return;
-      }
-
-      const now = dhakaNow();
-      container.innerHTML = trips.map((t, i) => {
-        const seats = Number(t.available_seats || 0);
-        const departed = hasDeparted(t, now);
-        const closed = departed || seats === 0;
-        const seatClass = departed || seats === 0 ? 'seats-none' : seats <= 5 ? 'seats-low' : 'seats-ok';
-        const seatText = departed ? 'Departed' : seats === 0 ? 'Sold out' : `${seats} seat${seats === 1 ? '' : 's'} left`;
-        return `
-          <article class="glass trip-card${closed ? ' is-closed' : ''}" style="--i: ${i}">
-            <div class="trip-times">
-              <div><strong>${escapeHtml(shortTime(t.departure_time))}</strong><span>${escapeHtml(t.origin)}</span></div>
-              <div class="trip-line">${busIcon}</div>
-              <div class="end"><strong>${escapeHtml(shortTime(t.arrival_time))}</strong><span>${escapeHtml(t.destination)}</span></div>
-            </div>
-            <div class="trip-meta">
-              <span class="tag">Trip ${escapeHtml(t.trip_id)}</span>
-              <span class="tag">Bus ${escapeHtml(t.bus_id)}</span>
-              <span class="tag">${escapeHtml(t.travel_date)}</span>
-              <span class="tag ${seatClass}">${seatText}</span>
-            </div>
-            <div class="trip-buy">
-              <div class="fare"><small>Fare</small><strong>BDT ${Number(t.fare || 0).toFixed(2)}</strong></div>
-              <button class="btn" type="button" ${closed ? 'disabled' : ''} data-trip="${escapeHtml(t.trip_id)}">Select seats ${arrowIcon}</button>
-            </div>
-          </article>`;
-      }).join('');
-    }
-
-    window.selectTrip = function selectTrip(tripId) {
-      window.location.href = `seat-selection.html?trip_id=${encodeURIComponent(tripId)}`;
-    };
-
-    container.addEventListener('click', event => {
-      const button = event.target.closest('[data-trip]');
-      if (button && !button.disabled) window.selectTrip(button.dataset.trip);
-    });
-
-    const windowNow = bookingWindow();
-    if (date && !inWindow(date, windowNow)) {
-      // A date before today, or more than two weeks out.
-      emptyState(
-        date < windowNow.first ? 'That date has passed' : 'Not on sale yet',
-        `Tickets are sold for today and the next ${BOOKING_WINDOW_DAYS - 1} days only.`
-      );
-    } else {
-      // Make sure the window's trips exist, then listen to just the
-      // searched date (or the whole window when no date was given).
-      ensureSchedule(db);
-      const tripsQuery = date
-        ? query(collection(db, 'trips'), where('travel_date', '==', date))
-        : query(collection(db, 'trips'), where('travel_date', '>=', windowNow.first), where('travel_date', '<=', windowNow.last));
-
-      let latest = null;
-      onSnapshot(tripsQuery, snapshot => {
-        const trips = [];
-        snapshot.forEach(docSnap => {
-          const trip = docSnap.data();
-          if (matchesSearch(trip)) trips.push(trip);
-        });
-        trips.sort((a, b) => String(a.travel_date).localeCompare(String(b.travel_date))
-          || String(a.departure_time).localeCompare(String(b.departure_time))
-          || String(a.trip_id).localeCompare(String(b.trip_id)));
-        latest = trips;
-        renderTrips(trips);
-      }, error => {
-        console.error(error);
-        emptyState('Trips could not be loaded', 'Please check your connection and try again in a moment.');
-      });
-
-      // A bus that leaves while the page is open turns to "Departed".
-      setInterval(() => { if (latest) renderTrips(latest.filter(matchesSearch)); }, 60000);
-    }
-  </script>
+  <script type="module" src="passenger.js"></script>
 </body>
 </html>

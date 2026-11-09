@@ -1,7 +1,4 @@
 <!DOCTYPE html>
-<!-- Counter Manager console. The same page as admin.html (both run
-     console-app.js); body data-console="cmanager" hides the admin-only
-     parts. Keep the two in step when changing the markup. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -16,17 +13,13 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
-  <link rel="modulepreload" href="firebase-init.js" />
-  <link rel="modulepreload" href="console-app.js" />
-  <link rel="modulepreload" href="schedule.js" />
-  <link rel="modulepreload" href="timetable.js" />
-  <link rel="modulepreload" href="staff.js" />
-  <link rel="modulepreload" href="policy.js" />
-  <link rel="modulepreload" href="accounts.js" />
+  <link rel="modulepreload" href="database.js" />
+  <link rel="modulepreload" href="config.js" />
+  <link rel="modulepreload" href="cmanager.js" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
-  <link rel="stylesheet" href="console.css" />
+  <link rel="stylesheet" href="cmanager.css" />
 </head>
 <body data-console="cmanager" data-role-name="Counter Manager">
   <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -415,7 +408,6 @@
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
 
-  <script type="module" src="console-app.js"></script>
-  <script type="module" src="console-fx.js"></script>
+  <script type="module" src="cmanager.js"></script>
 </body>
 </html>

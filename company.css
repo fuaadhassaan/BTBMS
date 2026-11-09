@@ -1,10 +1,4 @@
-/* =============================================================
-   DTicket consoles (Admin and Counter Manager)
-
-   One stylesheet for both. Staff consoles are red; the public site
-   is blue. Every class the console scripts write is styled here, so
-   nothing in admin.js or cmanager.js had to change for the redesign.
-   ============================================================= */
+/* DTicket Company Manager Console styles (company.html). */
 
 :root {
   color-scheme: dark;
@@ -1110,7 +1104,7 @@ body::before {
   font-weight: 600;
 }
 
-/* Trip status in Today's Trips, added by console-fx.js. */
+/* Trip status in Today's Trips, added by the effects block in the console's script. */
 .trip-status {
   display: inline-flex;
   align-items: center;

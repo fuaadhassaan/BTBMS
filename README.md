@@ -19,17 +19,30 @@ Bus ticket booking and management for Dhaka ↔ Chittagong and Dhaka ↔ Sylhet,
 **Company Manager console** (`company.html`, purple)
 - Dashboard, Stats and My account, read-only.
 
+## Files
+
+| Who | Files |
+| --- | --- |
+| Landing page | `index.html`, `index.css`, `index.js` |
+| Admin | `admin.html`, `admin.css`, `admin.js` |
+| Counter Manager | `cmanager.html`, `cmanager.css`, `cmanager.js` |
+| Company Manager | `company.html`, `company.css`, `company.js` |
+| Passengers | `ticket-booking.html` (search), `trip-results.html`, `seat-selection.html`, `policy.html`, sharing `passenger.css` and `passenger.js` |
+| Database | `database.js` (Firestore connection, trip schedule, staff sign-in, audit log) and `config.js` (timetable, cancellation policy, roles) |
+
+The three consoles share the same code with their role fixed at the top of each script, so a change to shared console behaviour belongs in all three.
+
 ## How it runs
 
 - Static site on Vercel (auto-deploys from `main`), data in Firebase Firestore (project `btbms-b79f0`), updates in real time.
-- **Timetable:** `timetable.js` holds the 8 daily trips (times, buses, fares). The GitHub Action `.github/workflows/daily-trips.yml` runs `scripts/generate-trips.mjs` at 00:05 Dhaka every night to keep 14 days on sale; site visits also top it up.
-- **Cancellation policy:** `policy.js` (90% > 24 h, 50% 6–24 h, none after).
+- **Timetable:** `config.js` holds the 8 daily trips (times, buses, fares). The GitHub Action `.github/workflows/daily-trips.yml` runs `scripts/generate-trips.mjs` at 00:05 Dhaka every night to keep 14 days on sale; site visits also top it up.
+- **Cancellation policy:** `config.js` (90% > 24 h, 50% 6–24 h, none after).
 - **Staff sign-in:** accounts live in the `staff` collection with salted PBKDF2 password hashes; create them in Admin → Users.
 - **Security rules:** `firestore.rules` (deploy with `firebase deploy --only firestore:rules`).
 
 Collections: `trips`, `bookings`, `buses`, `staff`, `requests`, `notices`, `audit`, `schedule`.
 
-`archive/`, `data/` and `trips-data.js` are from the earlier PHP version, kept for reference and not published to the site.
+`archive/` and `data/` are from the earlier PHP version, kept for reference and not published to the site.
 
 ---
 

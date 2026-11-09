@@ -4,8 +4,7 @@
    checked here; it is handed to the console, which checks it and sends
    the person back here with a reason if it is wrong. */
 
-import { ROLES, HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
-import { lookupRoles } from './staff.js';
+import { ROLES, HANDOFF_KEY, SIGNIN_ERROR_KEY, lookupRoles } from './database.js';
 
 const $ = selector => document.querySelector(selector);
 
@@ -249,8 +248,8 @@ form.addEventListener('submit', async event => {
 });
 
 /* Warm up the Firebase connection so the consoles open faster. */
-import('./firebase-init.js').catch(error => {
-  console.warn('[DTicket] firebase-init.js could not be preloaded.', error);
+import('./database.js').catch(error => {
+  console.warn('[DTicket] database.js could not be preloaded.', error);
 });
 
 /* The refresh button (left of the clock): spin, then reload. The local

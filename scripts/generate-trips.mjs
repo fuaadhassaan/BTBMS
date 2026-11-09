@@ -7,7 +7,7 @@
 
    It does the same thing the website's ensureSchedule() does:
    - reads schedule/window (the last date already generated),
-   - creates the missing days' trips from timetable.js (the same
+   - creates the missing days' trips from config.js (the same
      8 daily trips and buses the site uses),
    - advances schedule/window.
    Trips that already exist are skipped, never overwritten, so seats
@@ -22,10 +22,10 @@
      node scripts/generate-trips.mjs --today=2026-11-23 --dry   pretend a date
    ============================================================= */
 
-import { DAILY_TRIPS, bookingWindow, addDays, buildTrip, dhakaNow } from '../timetable.js';
+import { DAILY_TRIPS, bookingWindow, addDays, buildTrip, dhakaNow } from '../config.js';
 
 const PROJECT = 'btbms-b79f0';
-const API_KEY = 'AIzaSyDF2L2QCs9g0KGzyLGp03aQTaZ6A20zdPk'; // public web key (same as firebase-init.js)
+const API_KEY = 'AIzaSyDF2L2QCs9g0KGzyLGp03aQTaZ6A20zdPk'; // public web key (same as database.js)
 const DOCS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => {

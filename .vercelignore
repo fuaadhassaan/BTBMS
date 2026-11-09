@@ -5,6 +5,4 @@ scripts/
 .github/
 archive/
 data/
-trips-data.js
-trip_debug.txt
-hvm1.png
+README.md

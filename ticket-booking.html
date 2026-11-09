@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
-  <link rel="modulepreload" href="firebase-init.js" />
-  <link rel="modulepreload" href="schedule.js" />
-  <link rel="modulepreload" href="timetable.js" />
-  <link rel="stylesheet" href="public.css" />
+  <link rel="modulepreload" href="database.js" />
+  <link rel="modulepreload" href="config.js" />
+  <link rel="modulepreload" href="passenger.js" />
+  <link rel="stylesheet" href="passenger.css" />
   <!-- Before the first paint, so the page never flashes the wrong theme. -->
   <script>
     (function () {
@@ -27,7 +27,7 @@
     })();
   </script>
 </head>
-<body>
+<body data-page="search">
   <div class="backdrop" aria-hidden="true"></div>
 
   <nav class="topbar" aria-label="Site">
@@ -110,61 +110,6 @@
     </section>
   </main>
 
-  <script src="public.js"></script>
-  <script type="module">
-    import { db } from './firebase-init.js';
-    import { bookingWindow, ensureSchedule, BOOKING_WINDOW_DAYS } from './schedule.js';
-
-    const fromEl = document.getElementById('from');
-    const toEl = document.getElementById('to');
-    const dateEl = document.getElementById('travel_date');
-
-    // Tickets are on sale from today to 13 days ahead, in Dhaka time.
-    // The limits follow the clock: at midnight today drops off and a
-    // new day opens, even if the page was left open.
-    function applyWindow() {
-      const { first, last } = bookingWindow();
-      dateEl.min = first;
-      dateEl.max = last;
-      if (!dateEl.value || dateEl.value < first || dateEl.value > last) dateEl.value = first;
-      dateEl.title = `Tickets are on sale for the next ${BOOKING_WINDOW_DAYS} days`;
-    }
-    applyWindow();
-    setInterval(applyWindow, 30000);
-
-    // Make sure the next two weeks of trips exist (usually one read).
-    ensureSchedule(db);
-
-    // Results are filtered on the next page (Vercel cannot run the old PHP search).
-    document.getElementById('searchForm').addEventListener('submit', event => {
-      event.preventDefault();
-      if (fromEl.value && fromEl.value === toEl.value) {
-        toEl.setCustomValidity('Pick a destination different from the origin.');
-        toEl.reportValidity();
-        return;
-      }
-      const params = new URLSearchParams({ from: fromEl.value, to: toEl.value, date: dateEl.value });
-      window.location.href = 'trip-results.html?' + params.toString();
-    });
-
-    toEl.addEventListener('change', () => toEl.setCustomValidity(''));
-    fromEl.addEventListener('change', () => toEl.setCustomValidity(''));
-
-    const swapBtn = document.getElementById('swapBtn');
-    swapBtn.addEventListener('click', () => {
-      [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
-      swapBtn.classList.toggle('spin');
-    });
-
-    // Popular routes fill both ends at once.
-    document.querySelectorAll('.chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        fromEl.value = chip.dataset.from;
-        toEl.value = chip.dataset.to;
-        toEl.setCustomValidity('');
-        dateEl.focus();
-      });
-    });
-  </script>
+  <script type="module" src="passenger.js"></script>
 </body>
 </html>
