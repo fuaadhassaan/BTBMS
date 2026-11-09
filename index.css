@@ -1093,3 +1093,42 @@ html {
   0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
   80%, 100% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
 }
+
+/* =============================================================
+   The bus at night behind the whole landing page
+   ============================================================= */
+:root {
+  --photo-veil-top: rgba(2, 4, 10, 0.3);
+  --photo-veil-mid: rgba(2, 4, 10, 0.62);
+  --photo-veil-bottom: rgba(2, 4, 10, 0.92);
+}
+
+:root[data-theme='light'] {
+  --photo-veil-top: rgba(242, 245, 251, 0.5);
+  --photo-veil-mid: rgba(242, 245, 251, 0.78);
+  --photo-veil-bottom: rgba(242, 245, 251, 0.95);
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(67, 118, 255, 0.18), transparent 30%),
+    linear-gradient(180deg, var(--photo-veil-top) 0%, var(--photo-veil-mid) 55%, var(--photo-veil-bottom) 100%),
+    url('hvm1.webp') center 30% / cover no-repeat fixed,
+    var(--ink-2);
+}
+
+/* The hero's own veil gets lighter so the photo shows through. */
+.hero-overlay {
+  background: linear-gradient(180deg, transparent 0%, transparent 55%, var(--photo-veil-mid) 100%);
+}
+
+/* Light theme over the photo: a little more veil, deeper blue labels. */
+:root[data-theme='light'] {
+  --photo-veil-top: rgba(242, 245, 251, 0.66);
+  --photo-veil-mid: rgba(242, 245, 251, 0.82);
+}
+
+:root[data-theme='light'] .brand-tag,
+:root[data-theme='light'] .hero-eyebrow {
+  color: #2f55d4;
+}
