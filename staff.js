@@ -29,7 +29,7 @@ import {
 
 export const STAFF = 'staff';
 export const AUDIT = 'audit';
-export const ROLE_LABELS = { admin: 'Admin', cmanager: 'Counter Manager' };
+export const ROLE_LABELS = { admin: 'Admin', cmanager: 'Counter Manager', company: 'Company Manager' };
 
 /* Where a Counter Manager's counter is. */
 export const COUNTER_LOCATIONS = ['Dhaka', 'Chittagong', 'Sylhet'];

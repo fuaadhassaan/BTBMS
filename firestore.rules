@@ -82,7 +82,7 @@ service cloud.firestore {
     // salted PBKDF2 hashes, never in plain text) ----
     function validStaff(d) {
       return shortText(d.staff_id, 12)
-        && d.role in ['admin', 'cmanager']
+        && d.role in ['admin', 'cmanager', 'company']
         && shortText(d.name, 60)
         && d.password_hash is string && d.password_hash.size() == 64
         && d.password_salt is string && d.password_salt.size() == 32

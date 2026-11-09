@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<!-- Company Manager console. The same page as admin.html (all consoles run
+     console-app.js); body data-console="company" shows only Dashboard,
+     Stats and My account, read-only, in purple. Keep in step with admin.html. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DTicket - Company</title>
+  <link rel="icon" href="favicon.ico" sizes="32x32" />
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#7e22ce" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
+  <link rel="modulepreload" href="firebase-init.js" />
+  <link rel="modulepreload" href="console-app.js" />
+  <link rel="modulepreload" href="schedule.js" />
+  <link rel="modulepreload" href="staff.js" />
+  <link rel="modulepreload" href="policy.js" />
+  <link rel="modulepreload" href="accounts.js" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="console.css" />
+</head>
+<body data-console="company" data-role-name="Company Manager">
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <!-- Sign-in happens on the landing page; this only shows while the
+       session is being checked. -->
+  <div id="loginView" class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-badge">COMPANY</div>
+      <p class="section-note" id="loginMessage">Checking your session…</p>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar" aria-label="Company menu">
+      <div class="sidebar-brand">
+        <span class="brand-mark" aria-hidden="true">DT</span>
+        <span class="brand-text"><strong>DTicket</strong><small id="consoleLabel">Company Console</small></span>
+      </div>
+
+      <p class="nav-label">Overview</p>
+      <button type="button" class="sidebar-link active" data-section="dashboard"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg><span>Dashboard</span></button>
+      <button type="button" class="sidebar-link" data-section="stats"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg><span>Stats</span></button>
+
+      <p class="nav-label">Operations</p>
+      <button type="button" class="sidebar-link" data-section="trips"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM18 11H6V6h12z"/></svg><span>Trips</span></button>
+      <button type="button" class="sidebar-link" data-section="tickets"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2zm0-4.5h-2v-2h2zm0-4.5h-2v-2h2z"/></svg><span>Tickets</span></button>
+      <button type="button" class="sidebar-link" data-section="buses"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2H2v4h2v6a1 1 0 0 0 1 1h1v1a1 1 0 0 0 2 0v-1h8v1a1 1 0 0 0 2 0v-1h1a1 1 0 0 0 1-1v-6h2V8zM7.5 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM18 11H6V6h12z"/></svg><span>Buses</span></button>
+
+      <p class="nav-label">People</p>
+      <button type="button" class="sidebar-link" data-section="users" data-admin-only><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span>Users</span></button>
+      <button type="button" class="sidebar-link" data-section="passengers"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg><span>Passengers</span></button>
+
+      <p class="nav-label">Communication</p>
+      <button type="button" class="sidebar-link" data-section="requests"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9h10v2H7zm6 5H7v-2h6zm4-6H7V6h10z"/></svg><span>Requests</span><b class="nav-badge" id="badgeRequests" hidden></b></button>
+      <button type="button" class="sidebar-link" data-section="notices"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 11v2h4v-2zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1v4h2v-4h1l5 3V6L8 9zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/></svg><span>Notices</span></button>
+
+      <p class="nav-label">System</p>
+      <button type="button" class="sidebar-link" data-section="audit" data-admin-only><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.95 8.95 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8z"/></svg><span>Audit log</span></button>
+      <button type="button" class="sidebar-link" data-section="account"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z"/></svg><span>My account</span></button>
+
+      <div class="sidebar-footer">
+        <div class="who" id="whoAmI"></div>
+        <button type="button" id="adminLandingBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
+        <button type="button" id="adminLogoutBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 17v-3H9v-4h7V7l5 5zM14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg><span>Log out</span></button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- ================= DASHBOARD ================= -->
+      <section id="dashboardSection" class="section-panel active">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow" id="greeting">Welcome</p>
+            <h1>Dashboard</h1>
+            <p class="section-note">Live from the database. Times are Dhaka time.</p>
+          </div>
+          <div class="clock-group"><button type="button" class="icon-refresh" data-refresh title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
+          <div class="clock-pill" id="adminClock">--:--:--</div></div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-card"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zM7 12h5v5H7z"/></svg></span><span class="label">Trips today</span><span class="value" id="mTripsToday">0</span></div>
+          <div class="metric-card" data-tone="orange"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4z"/></svg></span><span class="label">Tickets sold today</span><span class="value" id="mSoldToday">0</span></div>
+          <div class="metric-card" data-tone="warn"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span><span class="label">Revenue today</span><span class="value" id="mRevenueToday">BDT 0.00</span></div>
+          <div class="metric-card" data-tone="info"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 18v3h3v-3h10v3h3v-6H4zm15-8h3v3h-3zM2 10h3v3H2zm15 3H7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2z"/></svg></span><span class="label">Seats booked · next 14 days</span><span class="value" id="mOccupancy">0%</span></div>
+          <div class="metric-card" data-tone="violet"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg></span><span class="label" data-cm-text="My pending requests">Pending requests</span><span class="value" id="mPending">0</span></div>
+          <div class="metric-card" data-tone="good"><span class="metric-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span><span class="label">Revenue · all time</span><span class="value" id="mRevenueTotal">BDT 0.00</span></div>
+        </div>
+
+        <div class="insight-grid">
+          <div class="card">
+            <div class="card-title-row"><h2>Ticket sales · last 14 days</h2><span class="section-note" id="revChartTotal"></span></div>
+            <div id="revChart" class="chart"></div>
+          </div>
+          <div class="card">
+            <h2>Needs attention</h2>
+            <ul id="attention" class="attention-list"></ul>
+          </div>
+        </div>
+
+        <div class="insight-grid">
+          <div class="card">
+            <div class="card-title-row"><h2>Departures today</h2><button type="button" class="link-btn" data-go="trips" data-ops-only>All trips &rarr;</button></div>
+            <div id="departures" class="table-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title-row"><h2>Recent activity</h2><button type="button" class="link-btn" data-go="audit" data-admin-only>Audit log &rarr;</button></div>
+            <ul id="recentActivity" class="activity-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STATS ================= -->
+      <section id="statsSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h1>Stats</h1>
+            <p class="section-note">Sales, revenue and how full the buses are, by travel date.</p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="secondary-btn" id="statsCsvBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5zm7-18-5.5 5.5 1.42 1.42L11 5.83V16h2V5.83l3.08 3.09 1.42-1.42z" transform="rotate(180 12 11)"/></svg> Download CSV</button>
+          <div class="segmented" role="group" aria-label="Period" id="statsRange">
+            <button type="button" data-range="7">Last 7 days</button>
+            <button type="button" data-range="14" class="active">Last 14 days</button>
+            <button type="button" data-range="30">Last 30 days</button>
+            <button type="button" data-range="next">Next 14 days</button>
+          </div>
+          </div>
+        </div>
+        <div class="metric-grid" id="statsCards"></div>
+        <div class="insight-grid">
+          <div class="card"><h2>Revenue per day</h2><div id="statsDaily" class="chart"></div></div>
+          <div class="card"><h2>Payment methods</h2><div id="statsPayments" class="donut-wrap"></div></div>
+        </div>
+        <div class="insight-grid">
+          <div class="card"><h2>Revenue by route</h2><div id="statsRoutes" class="hbars"></div></div>
+          <div class="card"><h2>How full · by route</h2><div id="statsOccupancy" class="hbars"></div></div>
+        </div>
+        <div class="insight-grid">
+          <div class="card"><h2>Morning vs night</h2><div id="statsSlots" class="hbars"></div></div>
+          <div class="card"><h2>Busiest trips</h2><div id="statsTop" class="table-wrap"></div></div>
+        </div>
+        <div class="insight-grid">
+          <div class="card"><h2>Sales by channel</h2><div id="statsChannels" class="hbars"></div></div>
+          <div class="card"><h2>Revenue by bus</h2><div id="statsBuses" class="hbars"></div></div>
+        </div>
+      </section>
+
+      <!-- ================= TRIPS ================= -->
+      <section id="tripsSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Trips</h1>
+            <p class="section-note" id="scheduleNote">8 trips run every day; the next 14 days are filled in automatically.</p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="secondary-btn" id="fillScheduleBtn" data-admin-only>Fill schedule</button>
+            <button type="button" class="primary-btn" id="newTripBtn" data-admin-only>+ New trip</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="tripSearch" placeholder="Search trip or bus…" aria-label="Search trips" />
+            <select id="tripWhen" aria-label="When">
+              <option value="upcoming">Upcoming (next 14 days)</option>
+              <option value="today">Today</option>
+              <option value="past">Past</option>
+              <option value="all">All dates</option>
+              <option value="date">Pick a date…</option>
+            </select>
+            <input type="date" id="tripDate" aria-label="Date" hidden />
+            <select id="tripRoute" aria-label="Route"><option value="">All routes</option></select>
+            <span class="toolbar-count" id="tripCount"></span>
+          </div>
+          <div id="tripsTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= TICKETS ================= -->
+      <section id="ticketsSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Tickets</h1>
+            <p class="section-note">Every booked seat: online, at the counter or issued here.</p>
+          </div>
+          <div class="head-actions"><button type="button" class="primary-btn" id="newTicketBtn">+ Issue ticket</button></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="ticketSearch" placeholder="Search name, phone, email, ticket or trip…" aria-label="Search tickets" />
+            <select id="ticketWhen" aria-label="Travel date">
+              <option value="upcoming">Upcoming trips</option>
+              <option value="today">Travelling today</option>
+              <option value="past">Past trips</option>
+              <option value="all">All</option>
+            </select>
+            <select id="ticketPay" aria-label="Payment">
+              <option value="">All payments</option>
+              <option value="cash">Cash</option>
+              <option value="bkash">bKash</option>
+              <option value="card">Card</option>
+            </select>
+            <span class="toolbar-count" id="ticketCount"></span>
+          </div>
+          <div id="ticketsTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= BUSES ================= -->
+      <section id="busesSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Buses</h1>
+            <p class="section-note" data-cm-text="The fleet and where each bus goes next.">The fleet. A bus in maintenance is flagged on the dashboard if it still has trips.</p>
+          </div>
+          <div class="head-actions" data-admin-only><button type="button" class="primary-btn" id="newBusBtn">+ New bus</button></div>
+        </div>
+        <div id="busMissing"></div>
+        <div id="busGrid" class="bus-grid"></div>
+      </section>
+
+      <!-- ================= USERS ================= -->
+      <section id="usersSection" class="section-panel" data-admin-only>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">People</p>
+            <h1>Users</h1>
+            <p class="section-note">Staff who can sign in: Admins and Counter Managers.</p>
+          </div>
+          <div class="head-actions"><button type="button" class="primary-btn" id="newUserBtn">+ New user</button></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="userSearch" placeholder="Search ID, name, phone or email…" aria-label="Search users" />
+            <select id="userRole" aria-label="Role">
+              <option value="">All roles</option>
+              <option value="admin">Admins</option>
+              <option value="cmanager">Counter Managers</option>
+              <option value="company">Company Managers</option>
+            </select>
+            <span class="toolbar-count" id="userCount"></span>
+          </div>
+          <div id="usersTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= PASSENGERS ================= -->
+      <section id="passengersSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">People</p>
+            <h1>Passengers</h1>
+            <p class="section-note">Everyone who has booked, grouped by email (or phone).</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="paxSearch" placeholder="Search name, phone or email…" aria-label="Search passengers" />
+            <span class="toolbar-count" id="paxCount"></span>
+          </div>
+          <div id="paxTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= REQUESTS ================= -->
+      <section id="requestsSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Communication</p>
+            <h1>Requests</h1>
+            <p class="section-note" data-cm-text="Your requests to Admin. You can edit or delete one until Admin reviews it.">Requests from counter managers arrive here in real time.</p>
+          </div>
+          <div class="head-actions"><button type="button" class="primary-btn" id="newRequestBtn">+ New request</button></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="reqSearch" placeholder="Search subject, details or sender…" aria-label="Search requests" />
+            <select id="reqStatus" aria-label="Status">
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Closed">Closed</option>
+            </select>
+            <span class="toolbar-count" id="reqCount"></span>
+          </div>
+          <div id="requestsTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= NOTICES ================= -->
+      <section id="noticesSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Communication</p>
+            <h1>Notices</h1>
+            <p class="section-note" data-cm-text="Notices from Admin for the counters.">Post a notice and it appears on the Counter Manager dashboard.</p>
+          </div>
+          <div class="head-actions" data-admin-only><button type="button" class="primary-btn" id="newNoticeBtn">+ Post notice</button></div>
+        </div>
+        <div id="noticeList" class="notice-grid"></div>
+      </section>
+
+      <!-- ================= AUDIT ================= -->
+      <section id="auditSection" class="section-panel" data-admin-only>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">System</p>
+            <h1>Audit log</h1>
+            <p class="section-note">Every change made in the consoles: who, what and when (latest 300).</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input type="search" id="auditSearch" placeholder="Search who or what…" aria-label="Search audit log" />
+            <select id="auditAction" aria-label="Action">
+              <option value="">All actions</option>
+              <option value="create">Created</option>
+              <option value="update">Updated</option>
+              <option value="delete">Deleted</option>
+              <option value="sign-in">Signed in</option>
+            </select>
+            <select id="auditTarget" aria-label="Area">
+              <option value="">All areas</option>
+              <option value="trips">Trips</option>
+              <option value="bookings">Tickets</option>
+              <option value="buses">Buses</option>
+              <option value="staff">Users</option>
+              <option value="requests">Requests</option>
+              <option value="notices">Notices</option>
+            </select>
+            <span class="toolbar-count" id="auditCount"></span>
+          </div>
+          <div id="auditTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= ACCOUNT ================= -->
+      <section id="accountSection" class="section-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">System</p>
+            <h1>My account</h1>
+            <p class="section-note">Your details and your password.</p>
+          </div>
+        </div>
+        <div class="insight-grid">
+          <div class="card">
+            <h2>Your details</h2>
+            <form id="accountForm" class="form-grid">
+              <div><label for="accId">User ID</label><input id="accId" readonly /></div>
+              <div><label for="accRole">Role</label><input id="accRole" readonly /></div>
+              <div class="full"><label for="accName">Name</label><input id="accName" name="name" required maxlength="60" /></div>
+              <div><label for="accPhone">Phone</label><input id="accPhone" name="phone" inputmode="tel" maxlength="20" /></div>
+              <div><label for="accEmail">Email</label><input id="accEmail" name="email" type="email" maxlength="80" /></div>
+              <div class="full form-actions"><button class="primary-btn" type="submit">Save details</button></div>
+            </form>
+            <p class="section-note" id="accMeta"></p>
+          </div>
+          <div class="card">
+            <h2>Your password</h2>
+            <form id="passwordForm" class="form-grid">
+              <div class="full"><label for="pwCurrent">Current password</label><input id="pwCurrent" name="current" type="password" autocomplete="current-password" required /></div>
+              <div><label for="pwNew">New password</label><input id="pwNew" name="next" type="password" autocomplete="new-password" minlength="6" required /></div>
+              <div><label for="pwConfirm">Repeat new password</label><input id="pwConfirm" name="confirm" type="password" autocomplete="new-password" minlength="6" required /></div>
+              <div class="full form-actions"><button class="primary-btn" type="submit">Change password</button></div>
+            </form>
+            <p class="section-note">At least 6 characters. You stay signed in on this device.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- One window for every form; its content is filled per use. -->
+  <dialog id="modal" class="modal" aria-labelledby="modalTitle">
+    <form id="modalForm" class="modal-card" novalidate>
+      <header class="modal-head">
+        <h2 id="modalTitle"></h2>
+        <button type="button" class="modal-close" data-close aria-label="Close">&times;</button>
+      </header>
+      <div id="modalBody" class="modal-body"></div>
+      <p id="modalError" class="message error" role="alert" hidden></p>
+      <footer class="modal-foot" id="modalFoot">
+        <button type="button" class="secondary-btn" data-close>Cancel</button>
+        <button type="submit" class="primary-btn" id="modalSubmit">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="confirm" class="modal modal-sm" aria-labelledby="confirmTitle">
+    <div class="modal-card">
+      <header class="modal-head"><h2 id="confirmTitle">Are you sure?</h2></header>
+      <div class="modal-body"><p id="confirmText"></p></div>
+      <footer class="modal-foot">
+        <button type="button" class="secondary-btn" id="confirmNo">Cancel</button>
+        <button type="button" class="primary-btn" id="confirmYes">Yes</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script type="module" src="console-app.js"></script>
+  <script type="module" src="console-fx.js"></script>
+</body>
+</html>

@@ -29,9 +29,14 @@ import {
    admin.html is the Admin console, cmanager.html the Counter console.
    A Counter Manager gets the same screens minus Users and the Audit
    log, read-only trips / buses / notices, and only their own requests. */
-const ROLE = document.body.dataset.console === 'cmanager' ? 'cmanager' : 'admin';
+const ROLE = ['cmanager', 'company'].includes(document.body.dataset.console) ? document.body.dataset.console : 'admin';
 const IS_ADMIN = ROLE === 'admin';
-const SESSION_KEY = IS_ADMIN ? 'btbms-admin-auth' : 'btbms-cmanager-auth';
+/* Company Manager: sees everything, changes nothing (Dashboard, Stats, My account). */
+const IS_COMPANY = ROLE === 'company';
+/* Admin and Company see the whole company's requests and activity; a
+   counter manager sees their own. */
+const SEES_ALL = ROLE !== 'cmanager';
+const SESSION_KEY = { admin: 'btbms-admin-auth', cmanager: 'btbms-cmanager-auth', company: 'btbms-company-auth' }[ROLE];
 const IDLE_MINUTES = 30;
 const CITIES = ['Dhaka', 'Chittagong', 'Sylhet'];
 const SEAT_LABELS = [
@@ -240,13 +245,15 @@ const selectHtml = (name, options, selected = '', attrs = '') => `<select name="
 /* =============================================================
    Navigation
    ============================================================= */
-const SECTIONS = IS_ADMIN
-  ? ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'users', 'passengers', 'requests', 'notices', 'audit', 'account']
-  : ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'passengers', 'requests', 'notices', 'account'];
+const SECTIONS = {
+  admin: ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'users', 'passengers', 'requests', 'notices', 'audit', 'account'],
+  cmanager: ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'passengers', 'requests', 'notices', 'account'],
+  company: ['dashboard', 'stats', 'account'],
+}[ROLE];
 
 /* Requests this console deals with: all of them for an admin, only
    your own for a counter manager. */
-const myRequests = () => (IS_ADMIN ? state.requests : state.requests.filter(r => r.requested_by === state.user?.id));
+const myRequests = () => (SEES_ALL ? state.requests : state.requests.filter(r => r.requested_by === state.user?.id));
 
 function setActiveSection(name) {
   if (!SECTIONS.includes(name)) name = 'dashboard';
@@ -301,7 +308,7 @@ function barChart(container, points, { format = v => v, animate = false } = {}) 
     </g>`;
   }).join('');
   container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" class="bar-chart" role="img" aria-label="Bar chart">
-    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a4c"/><stop offset="1" stop-color="#e11d48"/></linearGradient></defs>
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${IS_COMPANY ? '#d8b4fe' : '#ff8a4c'}"/><stop offset="1" stop-color="${IS_COMPANY ? '#9333ea' : '#e11d48'}"/></linearGradient></defs>
     <line x1="${pad.left}" x2="${width - pad.right}" y1="${height - pad.bottom}" y2="${height - pad.bottom}" class="axis"/>
     ${bars}
   </svg>`;
@@ -326,7 +333,7 @@ function donut(container, rows) {
     container.innerHTML = '<p class="section-note">No tickets in this period.</p>';
     return;
   }
-  const colors = ['#ff5a5a', '#fbbf24', '#60a5fa', '#a78bfa', '#34d399'];
+  const colors = [IS_COMPANY ? '#c084fc' : '#ff5a5a', '#fbbf24', '#60a5fa', IS_COMPANY ? '#f472b6' : '#a78bfa', '#34d399'];
   let offset = 0;
   const arcs = rows.map((r, i) => {
     const pct = (100 * r.value) / total;
@@ -397,7 +404,7 @@ function renderDashboard() {
 
   // Needs attention
   const items = [];
-  if (pending.length) items.push(['warn', IS_ADMIN ? `${plural(pending.length, 'request')} waiting for review` : `${plural(pending.length, 'of your requests')} still pending with Admin`, 'requests']);
+  if (pending.length) items.push(['warn', SEES_ALL ? `${plural(pending.length, 'request')} waiting for review` : `${plural(pending.length, 'of your requests')} still pending with Admin`, 'requests']);
   const upcoming = state.trips.filter(t => !hasDeparted(t, now) && t.travel_date <= win.last);
   const soon = upcoming.filter(t => t.travel_date === today && fullTime(t.departure_time) <= addMinutes(now.time, 180));
   soon.forEach(t => items.push(['info', `${shortTime(t.departure_time)} ${routeOf(t)} leaves soon · ${soldOf(t)}/${capacityOf(t)} sold`, 'trips']));
@@ -405,15 +412,15 @@ function renderDashboard() {
   if (almostFull.length) items.push(['warn', `${plural(almostFull.length, 'trip')} almost full`, 'trips']);
   const soldOut = upcoming.filter(t => Number(t.available_seats) <= 0);
   if (soldOut.length) items.push(['bad', `${plural(soldOut.length, 'trip')} sold out`, 'trips']);
-  const resting = IS_ADMIN ? state.buses.filter(b => b.status && b.status !== 'active') : [];
+  const resting = SEES_ALL ? state.buses.filter(b => b.status && b.status !== 'active') : [];
   resting.forEach(bus => {
     const n = upcoming.filter(t => t.bus_id === bus.id).length;
     if (n) items.push(['bad', `${bus.id} is ${bus.status} but has ${plural(n, 'upcoming trip')}`, 'buses']);
   });
   const usedBuses = new Set(upcoming.map(t => t.bus_id).filter(Boolean));
   const missing = [...usedBuses].filter(id => !state.buses.some(b => b.id === id));
-  if (IS_ADMIN && missing.length) items.push(['warn', `${missing.join(', ')} not in the bus list`, 'buses']);
-  if (IS_ADMIN && (state.marker?.generated_through || '') < win.last) items.push(['warn', 'Schedule is not filled for the full two weeks', 'trips']);
+  if (SEES_ALL && missing.length) items.push(['warn', `${missing.join(', ')} not in the bus list`, 'buses']);
+  if (SEES_ALL && (state.marker?.generated_through || '') < win.last) items.push(['warn', 'Schedule is not filled for the full two weeks', 'trips']);
 
   $('#attention').innerHTML = items.length
     ? items.map(([tone, text, go]) => `<li class="att att-${tone}"><span>${esc(text)}</span><button type="button" class="link-btn" data-go="${go}">Open &rarr;</button></li>`).join('')
@@ -427,7 +434,7 @@ function renderDashboard() {
 
   // Recent activity
   $('#recentActivity').innerHTML = state.audit.length
-    ? state.audit.filter(a => IS_ADMIN || a.actor_id === state.user.id).slice(0, 8).map(activityLine).join('') || '<li class="section-note">Nothing yet.</li>'
+    ? state.audit.filter(a => SEES_ALL || a.actor_id === state.user.id).slice(0, 8).map(activityLine).join('') || '<li class="section-note">Nothing yet.</li>'
     : '<li class="section-note">Nothing yet. Changes made in the consoles appear here.</li>';
 }
 
@@ -516,6 +523,53 @@ function renderStats() {
   $('#statsTop').innerHTML = top.length ? `<table class="styled-table compact"><thead><tr><th>Trip</th><th>Route</th><th>Date</th><th>Sold</th></tr></thead><tbody>
     ${top.map(t => `<tr><td>${esc(t.trip_id)}</td><td>${esc(routeOf(t))}</td><td>${esc(fmtDayShort(t.travel_date))} ${esc(shortTime(t.departure_time))}</td><td class="seats-cell">${seatsBar(t)}</td></tr>`).join('')}
   </tbody></table>` : '<p class="section-note">No tickets sold in this period.</p>';
+
+  // Where tickets were sold: online, the admin desk, or which counter.
+  const channelOf = b => (b.counter ? `${b.counter} counter` : b.source === 'Admin' ? 'Admin desk' : b.booked_by ? 'Counter' : 'Online');
+  const channels = new Map();
+  for (const b of tickets) {
+    const key = channelOf(b);
+    const entry = channels.get(key) || { count: 0, revenue: 0 };
+    entry.count += 1;
+    entry.revenue += fareOf(b);
+    channels.set(key, entry);
+  }
+  hBars($('#statsChannels'), [...channels].sort((a, b) => b[1].revenue - a[1].revenue)
+    .map(([label, e]) => ({ label: `${label} · ${plural(e.count, 'ticket')}`, value: e.revenue })), { format: money });
+
+  // Revenue and fullness per bus.
+  const buses = new Map();
+  for (const t of trips) {
+    const entry = buses.get(t.bus_id || '—') || { revenue: 0, sold: 0, cap: 0, trips: 0 };
+    entry.trips += 1;
+    entry.cap += capacityOf(t);
+    entry.sold += soldOf(t);
+    entry.revenue += soldOf(t) * Number(t.fare || 0);
+    buses.set(t.bus_id || '—', entry);
+  }
+  hBars($('#statsBuses'), [...buses].sort((a, b) => b[1].revenue - a[1].revenue)
+    .map(([bus, e]) => ({ label: `${bus} · ${plural(e.trips, 'trip')} · ${e.cap ? Math.round((100 * e.sold) / e.cap) : 0}% full`, value: e.revenue })), { format: money });
+
+  // One row per day, kept for "Download CSV".
+  state.statsCsv = [['Date', 'Trips', 'Seats', 'Tickets sold', 'Seats filled %', 'Revenue (BDT)']].concat(days.map(d => {
+    const dayTrips = trips.filter(t => t.travel_date === d);
+    const cap = sum(dayTrips, capacityOf);
+    const sold = sum(dayTrips, soldOf);
+    const revenue = sum(dayTrips, t => soldOf(t) * Number(t.fare || 0));
+    return [d, dayTrips.length, cap, sold, cap ? Math.round((100 * sold) / cap) : 0, revenue.toFixed(2)];
+  }));
+  state.statsCsvName = `dticket-stats-${first}-to-${last}.csv`;
+}
+
+function downloadStatsCsv() {
+  if (!state.statsCsv) renderStats();
+  const csv = state.statsCsv.map(row => row.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: state.statsCsvName || 'dticket-stats.csv' });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* =============================================================
@@ -1038,7 +1092,7 @@ function renderUsers() {
       return `<tr>
         <td><b>${esc(u.id)}</b>${me ? ' <span class="pill pill-info">You</span>' : ''}</td>
         <td>${esc(u.name)}</td>
-        <td>${pill(ROLE_LABELS[u.role] || u.role, u.role === 'admin' ? 'bad' : 'violet')}</td>
+        <td>${pill(ROLE_LABELS[u.role] || u.role, u.role === 'admin' ? 'bad' : u.role === 'company' ? 'info' : 'violet')}</td>
         <td>${u.role === 'cmanager' ? (u.counter ? esc(u.counter) : '<small>Not set</small>') : '<small>—</small>'}</td>
         <td><small>${esc(u.phone || '—')}<br>${esc(u.email || '')}</small></td>
         <td>${u.active === false ? pill('Off', 'muted') : pill('Active', 'good')}</td>
@@ -1061,7 +1115,7 @@ function openUserForm(id = '') {
     title: u ? `Edit ${u.id}` : 'New user',
     body: `<div class="form-grid">
       ${field('User ID', inputHtml('staff_id', u?.id || '', `required maxlength="12" pattern="[A-Za-z0-9]{2,12}" title="2–12 letters or digits" ${u ? 'readonly' : ''}`))}
-      ${field('Role', selectHtml('role', [['cmanager', 'Counter Manager'], ['admin', 'Admin']], u?.role || 'cmanager', me ? 'disabled' : ''))}
+      ${field('Role', selectHtml('role', [['cmanager', 'Counter Manager'], ['company', 'Company Manager'], ['admin', 'Admin']], u?.role || 'cmanager', me ? 'disabled' : ''))}
       ${field('Full name', inputHtml('name', u?.name || '', 'required maxlength="60"'))}
       ${field('Counter location', selectHtml('counter', [['', 'Choose a counter'], ...COUNTER_LOCATIONS.map(c => [c, `${c} counter`])], u?.counter || '', 'id="userCounter"'), 'counter-field')}
       ${field('Phone', inputHtml('phone', u?.phone || '', 'inputmode="tel" maxlength="20"'))}
@@ -1508,14 +1562,32 @@ async function startSession() {
 /* Counter console: drop admin-only controls and use counter wording. */
 function applyRole() {
   if (IS_ADMIN) return;
+  // Only the sections this role has; everything admin-only goes.
+  $$('.sidebar-link').forEach(b => { if (!SECTIONS.includes(b.dataset.section)) b.hidden = true; });
+  $$('.section-panel').forEach(s => { if (!SECTIONS.includes(s.id.replace('Section', ''))) s.hidden = true; });
   $$('[data-admin-only]').forEach(el => { el.hidden = true; });
+  if (IS_COMPANY) {
+    $$('[data-ops-only]').forEach(el => { el.hidden = true; });
+    $$('.nav-label').forEach(label => {
+      // a menu heading with nothing left under it disappears too
+      let next = label.nextElementSibling;
+      let visible = false;
+      while (next && !next.classList.contains('nav-label') && !next.classList.contains('sidebar-footer')) {
+        if (next.classList.contains('sidebar-link') && !next.hidden) visible = true;
+        next = next.nextElementSibling;
+      }
+      label.hidden = !visible;
+    });
+    $('#consoleLabel').textContent = 'Company Console';
+    return;
+  }
   $$('[data-cm-text]').forEach(el => { el.textContent = el.dataset.cmText; });
   const label = $('#consoleLabel');
   if (label) label.textContent = state.user.counter ? `${state.user.counter} Counter` : 'Counter Console';
 }
 
 function renderWho() {
-  $('#whoAmI').innerHTML = `<span class="who-avatar">${esc(state.user.name.slice(0, 1).toUpperCase())}</span><span><b>${esc(state.user.name)}</b><small>${esc(state.user.id)} · ${IS_ADMIN ? 'Admin' : esc(state.user.counter ? `${state.user.counter} counter` : 'Counter Manager')}</small></span>`;
+  $('#whoAmI').innerHTML = `<span class="who-avatar">${esc(state.user.name.slice(0, 1).toUpperCase())}</span><span><b>${esc(state.user.name)}</b><small>${esc(state.user.id)} · ${IS_ADMIN ? 'Admin' : IS_COMPANY ? 'Company Manager' : esc(state.user.counter ? `${state.user.counter} counter` : 'Counter Manager')}</small></span>`;
 }
 
 function logout() {
@@ -1568,6 +1640,7 @@ function bind() {
     });
   });
 
+  $('#statsCsvBtn').addEventListener('click', downloadStatsCsv);
   $('#statsRange').addEventListener('click', event => {
     const b = event.target.closest('[data-range]');
     if (!b) return;

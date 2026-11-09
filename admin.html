@@ -106,7 +106,7 @@
 
         <div class="insight-grid">
           <div class="card">
-            <div class="card-title-row"><h2>Departures today</h2><button type="button" class="link-btn" data-go="trips">All trips &rarr;</button></div>
+            <div class="card-title-row"><h2>Departures today</h2><button type="button" class="link-btn" data-go="trips" data-ops-only>All trips &rarr;</button></div>
             <div id="departures" class="table-wrap"></div>
           </div>
           <div class="card">
@@ -124,11 +124,14 @@
             <h1>Stats</h1>
             <p class="section-note">Sales, revenue and how full the buses are, by travel date.</p>
           </div>
+          <div class="head-actions">
+            <button type="button" class="secondary-btn" id="statsCsvBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5zm7-18-5.5 5.5 1.42 1.42L11 5.83V16h2V5.83l3.08 3.09 1.42-1.42z" transform="rotate(180 12 11)"/></svg> Download CSV</button>
           <div class="segmented" role="group" aria-label="Period" id="statsRange">
             <button type="button" data-range="7">Last 7 days</button>
             <button type="button" data-range="14" class="active">Last 14 days</button>
             <button type="button" data-range="30">Last 30 days</button>
             <button type="button" data-range="next">Next 14 days</button>
+          </div>
           </div>
         </div>
         <div class="metric-grid" id="statsCards"></div>
@@ -143,6 +146,10 @@
         <div class="insight-grid">
           <div class="card"><h2>Morning vs night</h2><div id="statsSlots" class="hbars"></div></div>
           <div class="card"><h2>Busiest trips</h2><div id="statsTop" class="table-wrap"></div></div>
+        </div>
+        <div class="insight-grid">
+          <div class="card"><h2>Sales by channel</h2><div id="statsChannels" class="hbars"></div></div>
+          <div class="card"><h2>Revenue by bus</h2><div id="statsBuses" class="hbars"></div></div>
         </div>
       </section>
 
@@ -239,6 +246,7 @@
               <option value="">All roles</option>
               <option value="admin">Admins</option>
               <option value="cmanager">Counter Managers</option>
+              <option value="company">Company Managers</option>
             </select>
             <span class="toolbar-count" id="userCount"></span>
           </div>

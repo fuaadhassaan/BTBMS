@@ -2185,3 +2185,70 @@ body {
     url('hvm1.webp') center 30% / cover no-repeat fixed,
     var(--bg);
 }
+
+/* =============================================================
+   Company Manager console: the same console in purple.
+   Semantic reds (errors, delete, "sold out") stay red.
+   ============================================================= */
+body[data-console='company'] {
+  --accent: #b37bff;
+  --accent-2: #d8b4fe;
+  --accent-soft: rgba(168, 85, 247, 0.16);
+  --accent-line: rgba(168, 85, 247, 0.5);
+  --accent-grad: linear-gradient(135deg, #c084fc 0%, #9333ea 55%, #6b21a8 100%);
+}
+
+body[data-console='company'] .aurora span:nth-child(1) { background: #9333ea; }
+body[data-console='company'] .aurora span:nth-child(2) { background: #7c3aed; }
+body[data-console='company'] .aurora span:nth-child(3) { background: #c084fc; }
+
+body[data-console='company'] .brand-mark {
+  box-shadow: 0 8px 24px rgba(147, 51, 234, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+body[data-console='company'] .sidebar button.active {
+  background: linear-gradient(90deg, var(--accent-soft), rgba(168, 85, 247, 0.02));
+}
+
+body[data-console='company'] .card::after,
+body[data-console='company'] .metric-card::after {
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(192, 132, 252, 0.09), transparent 45%);
+}
+
+body[data-console='company'] .primary-btn {
+  box-shadow: 0 8px 22px rgba(147, 51, 234, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body[data-console='company'] .primary-btn:hover {
+  box-shadow: 0 14px 30px rgba(147, 51, 234, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body[data-console='company'] .form-grid input:focus,
+body[data-console='company'] .form-grid textarea:focus,
+body[data-console='company'] .form-grid select:focus,
+body[data-console='company'] .toolbar input:focus,
+body[data-console='company'] .toolbar select:focus {
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.2);
+}
+
+body[data-console='company'] .styled-table tr:hover td {
+  background: rgba(168, 85, 247, 0.06);
+}
+
+body[data-console='company'] .mini-btn:not(.alt):not(.danger):not(.ok) {
+  color: #e9d5ff;
+}
+
+body[data-console='company'] *::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.35); background-clip: content-box; }
+body[data-console='company'] *::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.6); background-clip: content-box; }
+
+/* The veil over the background photo leans purple instead of red. */
+body[data-console='company'] {
+  background:
+    linear-gradient(180deg, rgba(9, 6, 14, 0.7) 0%, rgba(9, 6, 14, 0.84) 50%, rgba(9, 6, 14, 0.94) 100%),
+    url('hvm1.webp') center 30% / cover no-repeat fixed,
+    #08060c;
+}
+
+/* A read-only role: no "Open" links to screens it cannot open. */
+body[data-console='company'] .att .link-btn { display: none; }
