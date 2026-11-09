@@ -1,0 +1,1320 @@
+/* =============================================================
+   DTicket public pages: search, results, seat booking
+
+   The same look as the landing page: blue accent, dark by default,
+   a light theme on the same switch (the choice is shared through
+   localStorage 'btbms-theme', so it follows you from page to page).
+   ============================================================= */
+
+:root {
+  color-scheme: dark;
+
+  --ink: #02040a;
+  --ink-2: #060b16;
+  --surface: rgba(14, 19, 34, 0.66);
+  --surface-strong: rgba(14, 19, 34, 0.9);
+  --surface-2: rgba(255, 255, 255, 0.04);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #f5f7fb;
+  --text-2: #c9d3ee;
+  --muted: #8f9bbd;
+  --veil: linear-gradient(180deg, rgba(2, 4, 10, 0.55), rgba(2, 4, 10, 0.92) 70%, var(--ink));
+
+  --accent: #5a8cff;
+  --accent-strong: #2f55d4;
+  --accent-soft: rgba(90, 140, 255, 0.14);
+  --accent-line: rgba(90, 140, 255, 0.55);
+  --accent-grad: linear-gradient(135deg, #5a8cff, #2f55d4 60%, #2541b8);
+
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+
+  --seat: rgba(255, 255, 255, 0.07);
+  --seat-line: rgba(255, 255, 255, 0.16);
+  --seat-text: #e6ecff;
+  --seat-booked: rgba(255, 255, 255, 0.03);
+
+  --radius: 20px;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  font-family: 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --ink: #f2f5fb;
+  --ink-2: #e8edf8;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-strong: rgba(255, 255, 255, 0.95);
+  --surface-2: rgba(16, 26, 46, 0.04);
+  --line: rgba(16, 26, 46, 0.12);
+  --line-strong: rgba(16, 26, 46, 0.22);
+  --text: #101a2e;
+  --text-2: #2c3a58;
+  --muted: #5d6a88;
+  --veil: linear-gradient(180deg, rgba(242, 245, 251, 0.6), rgba(242, 245, 251, 0.93) 70%, var(--ink));
+
+  --accent: #2f55d4;
+  --accent-soft: rgba(47, 85, 212, 0.1);
+  --accent-line: rgba(47, 85, 212, 0.45);
+
+  --seat: #ffffff;
+  --seat-line: rgba(16, 26, 46, 0.18);
+  --seat-text: #1c2945;
+  --seat-booked: rgba(16, 26, 46, 0.06);
+
+  --shadow: 0 24px 50px rgba(30, 50, 100, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The bus at night, behind every page, under a veil that keeps
+   the content readable. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--veil), url('hvm1.png') center 30% / cover no-repeat;
+}
+
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 10%, rgba(90, 140, 255, 0.22), transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(47, 85, 212, 0.18), transparent 30%);
+}
+
+a {
+  color: inherit;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =============================================================
+   Top bar (same as the landing page)
+   ============================================================= */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.3s ease, border-color 0.3s ease, padding 0.3s ease;
+}
+
+.topbar.is-scrolled {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: color-mix(in srgb, var(--ink) 74%, transparent);
+  border-bottom-color: var(--line);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(64, 110, 255, 0.35);
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.brand:hover img {
+  transform: scale(1.06) rotate(-4deg);
+}
+
+.brand-text {
+  display: grid;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.brand-text strong {
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.brand-text small {
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clock {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.3s var(--ease-spring);
+}
+
+.icon-btn:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+.icon-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.theme-toggle .theme-sun { display: none; }
+:root[data-theme='light'] .theme-toggle .theme-sun { display: inline; }
+:root[data-theme='light'] .theme-toggle .theme-moon { display: none; }
+
+/* =============================================================
+   Page frame and the three-step progress bar
+   ============================================================= */
+.page {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 18px 0 56px;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 30px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  counter-increment: step;
+  white-space: nowrap;
+}
+
+.steps li::before {
+  content: counter(step);
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.steps li + li::after {
+  order: -1;
+  content: '';
+  width: clamp(18px, 5vw, 56px);
+  height: 2px;
+  margin-right: 4px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.steps li.done {
+  color: var(--text-2);
+}
+
+.steps li.done::before {
+  content: '✓';
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.steps li.done + li::after,
+.steps li.current::after {
+  background: var(--accent-grad);
+}
+
+.steps li.current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.steps li.current::before {
+  border-color: transparent;
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: 0 0 0 5px var(--accent-soft);
+}
+
+/* Things rise into place as a page opens, one after another. */
+.rise {
+  animation: rise 0.7s var(--ease-out) both;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.page-sub {
+  margin: 10px 0 0;
+  color: var(--text-2);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* =============================================================
+   Cards, buttons, fields
+   ============================================================= */
+.glass {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 24px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.98rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+
+/* The light sweep, as on the landing page buttons. */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s var(--ease-out);
+}
+
+.btn svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.35s var(--ease-spring);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #3d66ea;
+  box-shadow: 0 14px 32px rgba(34, 85, 190, 0.4);
+}
+
+.btn:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+
+.btn:hover:not(:disabled) svg {
+  transform: translateX(3px) scale(1.08);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  box-shadow: none;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.brand:focus-visible,
+.chip:focus-visible,
+.seat:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field label,
+.field .label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.control,
+.field input,
+.field select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.field input:hover,
+.field select:hover {
+  border-color: var(--accent-line);
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.field input::placeholder {
+  color: var(--muted);
+}
+
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 22px) 52%, calc(100% - 16px) 52%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.field select option {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+:root:not([data-theme='light']) .field input::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.7);
+  cursor: pointer;
+}
+
+/* =============================================================
+   Search page
+   ============================================================= */
+.search-hero {
+  max-width: 760px;
+  margin: 4vh auto 0;
+  text-align: center;
+}
+
+.search-card {
+  margin-top: 30px;
+  padding: clamp(20px, 3vw, 30px);
+  text-align: left;
+}
+
+.route-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 12px;
+}
+
+.swap-btn {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1px;
+  border-radius: 50%;
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.swap-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.5s var(--ease-spring);
+}
+
+.swap-btn.spin svg {
+  transform: rotate(180deg);
+}
+
+.search-bottom {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.search-bottom .btn {
+  padding: 15px 30px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.chips-label {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.chip {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.25s var(--ease-out), color 0.2s ease;
+}
+
+.chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.feature svg {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.feature strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* =============================================================
+   Results page
+   ============================================================= */
+.results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.route-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.route-title svg {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.88rem;
+}
+
+.trip-list {
+  display: grid;
+  gap: 14px;
+}
+
+.trip-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 28px;
+  padding: 20px 24px;
+  animation: rise 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  transition: transform 0.3s var(--ease-out), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.trip-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-line);
+  box-shadow: var(--shadow), 0 0 0 1px var(--accent-soft);
+}
+
+.trip-times {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.trip-times strong {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-times span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.trip-times .end {
+  text-align: right;
+}
+
+/* The line between departure and arrival, with a bus driving it. */
+.trip-line {
+  position: relative;
+  height: 2px;
+  margin: 0 4px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px);
+}
+
+.trip-line::before,
+.trip-line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translateY(-50%);
+}
+
+.trip-line::before { left: -4px; }
+.trip-line::after { right: -4px; background: var(--accent); }
+
+.trip-line svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border-radius: 6px;
+  background: var(--ink-2);
+  color: var(--accent);
+  transform: translate(-50%, -50%);
+  transition: left 0.9s var(--ease-out);
+}
+
+.trip-card:hover .trip-line svg {
+  left: 72%;
+}
+
+.trip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.tag.seats-ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.tag.seats-low { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.tag.seats-none { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+
+.trip-buy {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.fare {
+  text-align: right;
+}
+
+.fare small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fare strong {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shimmering placeholders while trips load. */
+.skeleton {
+  height: 104px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--accent-soft) 40%, var(--surface-2) 80%);
+  background-size: 200% 100%;
+  border: 1px solid var(--line);
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty svg {
+  width: 56px;
+  height: 56px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  50% { transform: translateY(-6px); }
+}
+
+.empty h3 {
+  margin: 6px 0 0;
+  font-size: 1.25rem;
+}
+
+.empty p {
+  margin: 0 0 8px;
+  color: var(--text-2);
+}
+
+/* =============================================================
+   Seat booking page
+   ============================================================= */
+.booking-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.layout-card,
+.details-card {
+  padding: clamp(20px, 3vw, 28px);
+}
+
+.details-card {
+  position: sticky;
+  top: 84px;
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card-head h1,
+.card-head h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.trip-id {
+  margin: 6px 0 0;
+  color: var(--text-2);
+  font-size: 0.92rem;
+}
+
+.details-note {
+  margin: 6px 0 0;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* The bus: a rounded body with the driver at the front. */
+.bus {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 18px 22px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 44px 44px 22px 22px;
+  background: var(--surface-2);
+}
+
+.bus-front {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--line-strong);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.bus-front svg {
+  width: 26px;
+  height: 26px;
+  color: var(--text-2);
+}
+
+.seat-grid-wrap {
+  display: grid;
+  justify-content: center;
+  gap: 10px;
+}
+
+.seat-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.seat {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--seat-line);
+  border-radius: 12px 12px 8px 8px;
+  background: var(--seat);
+  color: var(--seat-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-out), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+/* The seat back. */
+.seat::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 5px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.25;
+}
+
+.seat:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 20px rgba(34, 85, 190, 0.25);
+}
+
+.seat.selected {
+  border-color: transparent;
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(47, 85, 212, 0.45);
+  animation: seat-pop 0.4s var(--ease-spring);
+}
+
+@keyframes seat-pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.seat.booked {
+  border-style: dashed;
+  background: var(--seat-booked) repeating-linear-gradient(135deg, transparent 0 6px, var(--line) 6px 8px);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.seat:disabled:not(.booked):not(.selected) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.seat.gap {
+  visibility: hidden;
+  width: 26px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
+  margin-top: 18px;
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend i {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--seat-line);
+  border-radius: 5px;
+}
+
+.legend .free { background: var(--seat); }
+.legend .sel { background: var(--accent-grad); border-color: transparent; }
+.legend .bok { background: var(--seat-booked) repeating-linear-gradient(135deg, transparent 0 3px, var(--line) 3px 5px); border-style: dashed; }
+
+.count-line {
+  margin: 16px 0 0;
+  text-align: center;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.count-line span {
+  color: var(--accent);
+}
+
+.details-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.passenger-list {
+  display: grid;
+  gap: 12px;
+}
+
+.passenger-list:empty {
+  display: none;
+}
+
+.passenger-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  animation: rise 0.4s var(--ease-out) both;
+}
+
+.passenger-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.passenger-card h3::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.total-cost {
+  padding: 14px 16px;
+  border: 1px solid var(--accent-line);
+  border-radius: 14px;
+  background: var(--accent-soft);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  min-height: 22px;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.status.error {
+  color: var(--bad);
+}
+
+/* ---- the ticket ---- */
+.receipt-card {
+  display: none;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--surface-strong);
+  animation: rise 0.6s var(--ease-out) both;
+}
+
+.ticket-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -16px -16px 14px;
+  padding: 14px 16px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(135deg, #1d3fa8, #2f55d4 55%, #5a8cff);
+  color: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.ticket-head img {
+  display: block;
+  flex: none;
+  border-radius: 11px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.ticket-brand {
+  display: grid;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.ticket-brand strong {
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.ticket-brand small {
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+.ticket-tag {
+  margin-left: auto;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.receipt-grid {
+  display: grid;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.receipt-row strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.receipt-row span {
+  text-align: right;
+}
+
+.receipt-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.ticket-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 2px dashed var(--line-strong);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.print-btn {
+  display: none;
+  width: 100%;
+  margin-top: 14px;
+}
+
+@media print {
+  @page { margin: 14mm; }
+
+  body { background: #fff; color: #000; }
+  .backdrop,
+  .topbar,
+  .steps,
+  .layout-card > :not(#receiptCard),
+  .details-card,
+  .print-btn { display: none !important; }
+  .page { width: 100%; padding: 0; }
+  .booking-shell { display: block; }
+  .layout-card { padding: 0; border: 0; box-shadow: none; background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .receipt-card { display: block !important; margin: 0; border: 1px solid #111; background: #fff; color: #000; animation: none; }
+  .receipt-card * { color: #000 !important; }
+  .receipt-card .ticket-head,
+  .receipt-card .ticket-head * { color: #fff !important; }
+  .receipt-row strong { color: #333 !important; }
+  .receipt-row, .ticket-foot { border-color: #999 !important; }
+}
+
+/* =============================================================
+   Smaller screens
+   ============================================================= */
+@media (max-width: 960px) {
+  .booking-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .details-card {
+    position: static;
+  }
+
+  .trip-card {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-buy {
+    justify-content: space-between;
+  }
+
+  .fare {
+    text-align: left;
+  }
+}
+
+@media (max-width: 680px) {
+  .brand-text small,
+  .clock {
+    display: none;
+  }
+
+  .steps {
+    font-size: 0.75rem;
+    gap: 6px;
+  }
+
+  .steps li span {
+    display: none;
+  }
+
+  .steps li.current span {
+    display: inline;
+  }
+
+  .route-row {
+    grid-template-columns: 1fr;
+  }
+
+  .swap-btn {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .search-bottom,
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .search-bottom .btn {
+    width: 100%;
+  }
+
+  .bus {
+    padding: 14px 12px 16px;
+  }
+
+  .seat {
+    width: 44px;
+    height: 44px;
+  }
+
+  .seat-row,
+  .seat-grid-wrap {
+    gap: 8px;
+  }
+
+  .seat.gap {
+    width: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

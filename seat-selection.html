@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DTicket - Passenger Booking</title>
   <link rel="icon" href="favicon.ico" sizes="32x32" />
@@ -9,507 +9,127 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
-  <link rel="stylesheet" href="site.css">
-  <style>
-    :root {
-      --panel: rgba(15, 15, 18, 0.92);
-      --panel-2: rgba(28, 28, 34, 0.98);
-      --accent: #2563eb;
-      --accent-2: #11a8fd;
-      --text: #f5f7fb;
-      --muted: #b8c0cc;
-      --danger: #ff5d5d;
-      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-    }
-
-    html, body { min-height: 100%; }
-    body {
-      margin: 0;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(17, 168, 253, 0.2), transparent 28%),
-        radial-gradient(circle at top right, rgba(0, 200, 83, 0.16), transparent 30%),
-        #050505;
-    }
-
-    .booking-shell {
-      width: min(1400px, calc(100% - 32px));
-      margin: 24px auto 40px;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 20px;
-      align-items: start;
-    }
-
-    .topbar {
-      width: min(1400px, calc(100% - 32px));
-      margin: 18px auto 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 12px; }
-
-    .home-btn, .refresh-btn, .search-btn, .print-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 96px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 700;
-      border: 0;
-      cursor: pointer;
-      color: #fff;
-      background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
-      box-shadow: var(--shadow);
-    }
-
-    .refresh-btn { background: linear-gradient(135deg, #444, #222); }
-    .search-btn { background: linear-gradient(135deg, #7c3aed, #2563eb); }
-    .print-btn { background: linear-gradient(135deg, #0f766e, #22c55e); }
-
-    .clock-pill {
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.82);
-      color: #fff;
-      font: 600 14px/1.1 Arial, sans-serif;
-      letter-spacing: 0.08em;
-      box-shadow: var(--shadow);
-      user-select: none;
-    }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .layout-card {
-      padding: 24px;
-    }
-
-    .details-card {
-      padding: 24px;
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      position: sticky;
-      top: 16px;
-    }
-
-    .seat-layout-title {
-      margin: 0 0 6px;
-      font-size: 26px;
-    }
-
-    .trip-id {
-      margin: 0 0 18px;
-      color: var(--muted);
-    }
-
-    .seat-layout-label {
-      text-align: center;
-      margin: 8px 0 18px;
-      font-size: 16px;
-      letter-spacing: 0.15em;
-      color: #d9e3f0;
-    }
-
-    .seat-grid-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      padding-bottom: 12px;
-    }
-
-    .seat-row {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .seat {
-      width: 58px;
-      height: 58px;
-      border: 0;
-      border-radius: 8px;
-      background: #f7f7fb;
-      color: #111;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
-    }
-
-    .seat:hover { transform: translateY(-1px); }
-    .seat.booked { background: #686868; color: #fff; cursor: not-allowed; opacity: 0.82; }
-    .seat.selected { background: var(--accent); color: white; }
-    .seat:disabled { cursor: not-allowed; }
-    .seat.gap {
-      visibility: hidden;
-      width: 22px;
-      box-shadow: none;
-      background: transparent;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 16px;
-      justify-content: center;
-      margin-top: 16px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .legend i {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .legend .free { background: #f7f7fb; }
-    .legend .sel { background: var(--accent); }
-    .legend .bok { background: #686868; }
-
-    .count-line {
-      margin: 18px 0 0;
-      color: #d6dbe3;
-      font-weight: 700;
-    }
-
-    .details-note {
-      margin: 0 0 18px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .hidden { display: none !important; }
-
-    .details-form {
-      display: grid;
-      gap: 14px;
-    }
-
-    .passenger-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .passenger-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .passenger-card h3 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
-    .field label {
-      font-size: 13px;
-      color: #d8deea;
-    }
-
-    .field input,
-    .field select {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(0, 0, 0, 0.35);
-      color: #fff;
-      outline: none;
-    }
-
-    .field input::placeholder { color: #9fa8b6; }
-
-    .field select {
-      background-color: #000;
-      color: #fff;
-    }
-
-    .field select option {
-      background-color: #000;
-      color: #fff;
-    }
-
-    .total-cost-field {
-      margin-bottom: 15px;
-    }
-
-    .total-cost {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(0, 0, 0, 0.45);
-      color: #fff;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 14px 18px;
-      border: 0;
-      border-radius: 14px;
-      cursor: pointer;
-      font-weight: 800;
-      color: white;
-      background: linear-gradient(135deg, #14b8a6, #22c55e);
-      box-shadow: var(--shadow);
-    }
-
-    .submit-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .print-btn {
-      width: 100%;
-      margin-top: 10px;
-      display: none;
-    }
-
-    .status {
-      min-height: 24px;
-      color: #d6dbe3;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-
-    .receipt-card {
-      margin-top: 14px;
-      padding: 16px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      display: none;
-    }
-
-    /* ---- the DTicket brand band across the top of the ticket ---- */
-    .ticket-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: -16px -16px 14px;
-      padding: 14px 16px;
-      border-radius: 16px 16px 0 0;
-      background: linear-gradient(135deg, #1d3fa8, #2f55d4 55%, #5a8cff);
-      color: #fff;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    .ticket-head img {
-      display: block;
-      flex: none;
-      border-radius: 11px;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
-    }
-
-    .ticket-brand {
-      display: grid;
-      gap: 2px;
-      line-height: 1.15;
-    }
-
-    .ticket-brand strong {
-      font-size: 19px;
-      letter-spacing: -0.01em;
-    }
-
-    .ticket-brand small {
-      font-size: 11.5px;
-      opacity: 0.85;
-    }
-
-    .ticket-tag {
-      margin-left: auto;
-      padding: 5px 10px;
-      border: 1px solid rgba(255, 255, 255, 0.55);
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .ticket-foot {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 6px 12px;
-      margin: 14px 0 0;
-      padding-top: 12px;
-      border-top: 2px dashed rgba(255, 255, 255, 0.16);
-      color: #aab4c3;
-      font-size: 12px;
-    }
-
-    .receipt-grid {
-      display: grid;
-      gap: 8px;
-      color: #e6ebf3;
-      font-size: 14px;
-    }
-
-    .receipt-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px dashed rgba(255,255,255,0.1);
-      padding-bottom: 8px;
-    }
-
-    .receipt-row:last-child { border-bottom: 0; padding-bottom: 0; }
-
-    @media print {
-      body { background: #fff; color: #000; }
-      .topbar, .layout-card > :not(#receiptCard), .details-card, .refresh-btn, .search-btn, .print-btn { display: none !important; }
-      .booking-shell { display: block; width: 100%; margin: 0; }
-      .layout-card { box-shadow: none; border: 0; background: #fff; color: #000; padding: 0; }
-      .receipt-card {
-        display: block !important;
-        border: 1px solid #111;
-        background: #fff;
-        color: #000;
-        margin: 0;
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="stylesheet" href="public.css" />
+  <!-- Before the first paint, so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('btbms-theme') === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
       }
-      .receipt-card * { color: #000 !important; }
-      /* The brand band keeps its blue and white lettering on paper. */
-      .receipt-card .ticket-head,
-      .receipt-card .ticket-head * { color: #fff !important; }
-      .receipt-card .ticket-head { border-radius: 0; margin: -16px -16px 14px; }
-      .receipt-card .ticket-foot { border-top-color: #999; }
-    }
-
-    .error {
-      color: #ffb4b4;
-    }
-
-    @media (max-width: 1100px) {
-      .booking-shell { grid-template-columns: 1fr; }
-      .details-card { position: static; }
-    }
-
-    @media (max-width: 760px) {
-      .booking-shell, .topbar { width: calc(100% - 20px); }
-      .layout-card, .details-card { padding: 18px; }
-      .seat { width: 48px; height: 48px; }
-      .seat-row { gap: 10px; }
-      .seat-layout-title { font-size: 22px; }
-    }
-  </style>
+    })();
+  </script>
 </head>
 <body>
-  <div class="topbar">
-    <div class="topbar-left">
-      <a href="index.html" class="dt-logo" aria-label="DTicket home"><img src="logo.svg" width="38" height="38" alt="" /><span>DTicket</span></a>
-      <a href="index.html" class="home-btn">Home</a>
-        <a href="ticket-booking.html" class="home-btn search-btn">Search</a>
-      <button type="button" id="refreshBtn" class="refresh-btn">Refresh</button>
-    </div>
-    <div class="topbar-right">
-      <div id="clock" class="clock-pill" aria-live="polite">--:--:--</div>
-    </div>
-  </div>
+  <div class="backdrop" aria-hidden="true"></div>
 
-  <main class="booking-shell">
-    <section class="card layout-card" aria-label="Seat layout">
-      <h1 class="seat-layout-title">Passenger Booking</h1>
-      <p id="tripMeta" class="trip-id">Select seats to continue.</p>
-      <div class="seat-layout-label">SEAT LAYOUT</div>
-      <div class="seat-grid-wrap" id="seats"></div>
-      <div class="legend" aria-hidden="true">
-        <span><i class="free"></i>Available</span>
-        <span><i class="sel"></i>Selected</span>
-        <span><i class="bok"></i>Booked</span>
-      </div>
-      <p class="count-line">Selected seats: <span id="selCount">0</span>/4</p>
-      <div id="receiptCard" class="receipt-card" aria-live="polite">
-        <div class="ticket-head">
-          <img src="logo.svg" width="44" height="44" alt="DTicket" />
-          <div class="ticket-brand">
-            <strong>DTicket</strong>
-            <small>The all-in-one Ticketing Website</small>
+  <nav class="topbar" aria-label="Site">
+    <a class="brand" href="index.html" aria-label="DTicket home">
+      <img src="logo.svg" width="38" height="38" alt="" />
+      <span class="brand-text"><strong>DTicket</strong><small>The all-in-one Ticketing Website</small></span>
+    </a>
+    <div class="top-actions">
+      <a class="btn btn-ghost" href="ticket-booking.html" style="padding: 8px 16px"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg> Search</a>
+      <button type="button" id="refreshBtn" class="icon-btn" title="Refresh seat availability" aria-label="Refresh seat availability"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
+      <div class="clock" id="clock" title="Bangladesh Standard Time (UTC+6)">--:--:--</div>
+      <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Switch between dark and light">
+        <span class="theme-moon" aria-hidden="true">&#9790;</span>
+        <span class="theme-sun" aria-hidden="true">&#9728;</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="page">
+    <ol class="steps rise" aria-label="Booking progress">
+      <li class="done"><span>Search</span></li>
+      <li class="done"><span>Choose a trip</span></li>
+      <li class="current" aria-current="step"><span>Seats &amp; payment</span></li>
+    </ol>
+
+    <div class="booking-shell">
+      <section class="glass layout-card rise" style="--d: 0.05s" aria-label="Seat layout">
+        <div class="card-head">
+          <div>
+            <h1 class="seat-layout-title">Choose your seats</h1>
+            <p id="tripMeta" class="trip-id">Select seats to continue.</p>
           </div>
-          <span class="ticket-tag">E-Ticket</span>
-        </div>
-        <div id="receiptBody" class="receipt-grid"></div>
-        <p class="ticket-foot">
-          <span>Please show this ticket when boarding.</span>
-          <span id="ticketIssued"></span>
-        </p>
-        <button id="printBtn" type="button" class="print-btn" style="margin-top:14px;">Print PDF</button>
-      </div>
-    </section>
-
-    <aside class="card details-card" aria-label="Passenger details">
-      <h2 style="margin-top:0">Passenger Details</h2>
-      <p class="details-note">Passenger fields appear as seats are selected. You can book up to 4 seats at a time.</p>
-      <form id="bookingForm" class="details-form">
-        <div id="passengerList" class="passenger-list"></div>
-
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="name@example.com" required />
         </div>
 
-        <div class="field">
-          <label for="contact">Contact Number</label>
-          <input id="contact" name="contact" type="tel" placeholder="01XXXXXXXXX" required />
+        <div class="bus">
+          <div class="bus-front"><span>Front</span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 0 1 7.75 6h-3.4A4.5 4.5 0 0 0 12 7.5 4.5 4.5 0 0 0 7.65 10h-3.4A8 8 0 0 1 12 4zm0 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM4.25 14h3.4a4.5 4.5 0 0 0 3.35 3.4v2.55A8 8 0 0 1 4.25 14zm8.75 5.95V17.4A4.5 4.5 0 0 0 16.35 14h3.4A8 8 0 0 1 13 19.95z"/></svg></div>
+          <div class="seat-grid-wrap" id="seats"></div>
         </div>
 
-        <div class="field total-cost-field">
-          <label>Total Cost</label>
-          <div id="totalCost" class="total-cost">BDT 0.00</div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="free"></i>Available</span>
+          <span><i class="sel"></i>Selected</span>
+          <span><i class="bok"></i>Booked</span>
         </div>
+        <p class="count-line">Selected seats: <span id="selCount">0</span> / 4</p>
 
-        <div class="field">
-          <label for="paymentMethod">Payment Method</label>
-          <select id="paymentMethod" name="paymentMethod" required>
-            <option value="">Select payment method</option>
-            <option value="cash">Cash</option>
-            <option value="bkash">Bkash</option>
-            <option value="card">Card</option>
-          </select>
+        <div id="receiptCard" class="receipt-card" aria-live="polite">
+          <div class="ticket-head">
+            <img src="logo.svg" width="44" height="44" alt="DTicket" />
+            <div class="ticket-brand">
+              <strong>DTicket</strong>
+              <small>The all-in-one Ticketing Website</small>
+            </div>
+            <span class="ticket-tag">E-Ticket</span>
+          </div>
+          <div id="receiptBody" class="receipt-grid"></div>
+          <p class="ticket-foot">
+            <span>Please show this ticket when boarding.</span>
+            <span id="ticketIssued"></span>
+          </p>
+          <button id="printBtn" type="button" class="btn print-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12z"/></svg> Download PDF</button>
         </div>
+      </section>
 
-        <button id="submitBtn" class="submit-btn" type="submit" disabled>Submit and Book Your Ticket(s)</button>
-        <button id="printBtn" type="button" class="print-btn">Download PDF</button>
-        <div id="status" class="status" aria-live="polite"></div>
-      </form>
-    </aside>
+      <aside class="glass details-card rise" style="--d: 0.12s" aria-label="Passenger details">
+        <div class="card-head">
+          <div>
+            <h2>Passenger details</h2>
+            <p class="details-note">A name field appears for each seat you pick. You can book up to 4 seats at a time.</p>
+          </div>
+        </div>
+        <form id="bookingForm" class="details-form">
+          <div id="passengerList" class="passenger-list"></div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required />
+          </div>
+
+          <div class="field">
+            <label for="contact">Contact number</label>
+            <input id="contact" name="contact" type="tel" placeholder="01XXXXXXXXX" autocomplete="tel" required />
+          </div>
+
+          <div class="field">
+            <label for="paymentMethod">Payment method</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+              <option value="">Select payment method</option>
+              <option value="cash">Cash</option>
+              <option value="bkash">Bkash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <span class="label">Total cost</span>
+            <div id="totalCost" class="total-cost" aria-live="polite">BDT 0.00</div>
+          </div>
+
+          <button id="submitBtn" class="btn btn-block submit-btn" type="submit" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2zm0-4.5h-2v-2h2zm0-4.5h-2v-2h2z"/></svg> Book my ticket(s)</button>
+          <div id="status" class="status" aria-live="polite"></div>
+        </form>
+      </aside>
+    </div>
   </main>
 
+  <script src="public.js"></script>
   <script type="module">
     import { db } from './firebase-init.js';
     import {
@@ -548,7 +168,7 @@
     let lastBookingReceipt = null;
     const totalSeats = 28;
 
-    tripMeta.textContent = `Trip ID: ${tripId}`;
+    tripMeta.textContent = `Trip ${tripId}`;
 
     function buildSeats() {
       seatsContainer.innerHTML = '';
@@ -645,6 +265,10 @@
       statusEl.classList.toggle('error', isError);
     }
 
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
+
     function renderReceipt(receipt) {
       if (!receipt) {
         receiptCard.style.display = 'none';
@@ -654,17 +278,17 @@
       }
 
       receiptBody.innerHTML = `
-        <div class="receipt-row"><strong>Trip ID</strong><span>${receipt.tripId}</span></div>
-        <div class="receipt-row"><strong>Route</strong><span>${receipt.route}</span></div>
-        <div class="receipt-row"><strong>Bus Time</strong><span>${receipt.busTime}</span></div>
-        <div class="receipt-row"><strong>Price</strong><span>${receipt.pricePerTicket}</span></div>
-        <div class="receipt-row"><strong>Total Price</strong><span>${receipt.totalPrice}</span></div>
-        <div class="receipt-row"><strong>Total Seats</strong><span>${receipt.totalSeats}</span></div>
-        <div class="receipt-row"><strong>Seats</strong><span>${receipt.seats.join(', ')}</span></div>
-        <div class="receipt-row"><strong>Passengers</strong><span>${receipt.passengers.join(', ')}</span></div>
-        <div class="receipt-row"><strong>Email</strong><span>${receipt.email}</span></div>
-        <div class="receipt-row"><strong>Contact</strong><span>${receipt.contact}</span></div>
-        <div class="receipt-row"><strong>Payment</strong><span>${receipt.paymentMethod}</span></div>
+        <div class="receipt-row"><strong>Trip ID</strong><span>${escapeHtml(receipt.tripId)}</span></div>
+        <div class="receipt-row"><strong>Route</strong><span>${escapeHtml(receipt.route)}</span></div>
+        <div class="receipt-row"><strong>Bus Time</strong><span>${escapeHtml(receipt.busTime)}</span></div>
+        <div class="receipt-row"><strong>Price</strong><span>${escapeHtml(receipt.pricePerTicket)}</span></div>
+        <div class="receipt-row"><strong>Total Price</strong><span>${escapeHtml(receipt.totalPrice)}</span></div>
+        <div class="receipt-row"><strong>Total Seats</strong><span>${escapeHtml(receipt.totalSeats)}</span></div>
+        <div class="receipt-row"><strong>Seats</strong><span>${escapeHtml(receipt.seats.join(', '))}</span></div>
+        <div class="receipt-row"><strong>Passengers</strong><span>${escapeHtml(receipt.passengers.join(', '))}</span></div>
+        <div class="receipt-row"><strong>Email</strong><span>${escapeHtml(receipt.email)}</span></div>
+        <div class="receipt-row"><strong>Contact</strong><span>${escapeHtml(receipt.contact)}</span></div>
+        <div class="receipt-row"><strong>Payment</strong><span>${escapeHtml(receipt.paymentMethod)}</span></div>
       `;
       document.getElementById('ticketIssued').textContent = `Issued ${new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
@@ -700,7 +324,7 @@
           totalAvailableSeats = available;
           const origin = tripDocData.origin || 'Unknown';
           const destination = tripDocData.destination || 'Unknown';
-          tripMeta.textContent = `Trip ID: ${tripId} | ${origin} to ${destination} | Available seats: ${available}`;
+          tripMeta.textContent = `Trip ${tripId} · ${origin} to ${destination} · Seats left: ${available}`;
           updateTotalCostDisplay();
         }
       } catch (error) {
@@ -724,7 +348,7 @@
         renderPassengerFields();
         syncSeatStyles();
         if (tripDocData) {
-          tripMeta.textContent = `Trip ID: ${tripId} | ${tripDocData.origin || 'Unknown'} to ${tripDocData.destination || 'Unknown'} | Available seats: ${tripDocData.available_seats ?? 0}`;
+          tripMeta.textContent = `Trip ${tripId} · ${tripDocData.origin || 'Unknown'} to ${tripDocData.destination || 'Unknown'} · Seats left: ${tripDocData.available_seats ?? 0}`;
         }
       }, error => {
         console.error('Booking listener failed', error);
@@ -823,7 +447,7 @@
           busTime: tripDocData?.departure_time || 'Unknown',
           pricePerTicket: `BDT ${Number(tripDocData?.fare || 0).toFixed(2)}`,
           totalPrice: `BDT ${(Number(tripDocData?.fare || 0) * selectedLabels.length).toFixed(2)}`,
-          totalSeats,
+          totalSeats: selectedLabels.length,
           seats: selectedLabels,
           passengers: passengerNames,
           email,
@@ -848,7 +472,6 @@
     buildSeats();
     renderPassengerFields();
     syncSeatStyles();
-    startClock();
     loadTripMeta();
     listenBookings();
     setInterval(loadTripMeta, 30000);

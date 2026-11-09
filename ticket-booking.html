@@ -2,39 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DTicket - Search Trips</title>
   <link rel="icon" href="favicon.ico" sizes="32x32" />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
-  <link rel="stylesheet" href="site.css" />
-  <link rel="stylesheet" href="ticket-booking.css" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="stylesheet" href="public.css" />
+  <!-- Before the first paint, so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('btbms-theme') === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
-  <main class="main-section">
-    <a href="index.html" class="dt-logo" aria-label="DTicket home"><img src="logo.svg" width="38" height="38" alt="" /><span>DTicket</span></a>
-    <a href="index.html" class="home-btn">Home</a>
-    <section class="explore" aria-label="Search a trip">
-      <h2>Search Your Trip</h2>
-      <form class="search-form" id="searchForm">
-        <div class="field-row">
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <nav class="topbar" aria-label="Site">
+    <a class="brand" href="index.html" aria-label="DTicket home">
+      <img src="logo.svg" width="38" height="38" alt="" />
+      <span class="brand-text"><strong>DTicket</strong><small>The all-in-one Ticketing Website</small></span>
+    </a>
+    <div class="top-actions">
+      <div class="clock" id="clock" title="Bangladesh Standard Time (UTC+6)">--:--:--</div>
+      <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Switch between dark and light">
+        <span class="theme-moon" aria-hidden="true">&#9790;</span>
+        <span class="theme-sun" aria-hidden="true">&#9728;</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="page">
+    <ol class="steps rise" aria-label="Booking progress">
+      <li class="current" aria-current="step"><span>Search</span></li>
+      <li class=""><span>Choose a trip</span></li>
+      <li class=""><span>Seats &amp; payment</span></li>
+    </ol>
+
+    <section class="search-hero">
+      <p class="eyebrow rise" style="--d: 0.05s">Book in a few clicks</p>
+      <h1 class="page-title rise" style="--d: 0.1s">Where are you headed?</h1>
+      <p class="page-sub rise" style="--d: 0.15s">Pick your route and date &mdash; we&rsquo;ll show every bus with seats left.</p>
+
+      <form class="glass search-card rise" style="--d: 0.22s" id="searchForm">
+        <div class="route-row">
           <div class="field">
             <label for="from">From</label>
             <select id="from" name="from" required>
-              <option value="">Select From</option>
+              <option value="">Select origin</option>
               <option value="Dhaka">Dhaka</option>
               <option value="Chittagong">Chittagong</option>
               <option value="Sylhet">Sylhet</option>
             </select>
           </div>
 
-          <button type="button" id="swapBtn" class="swap-btn" title="Swap locations">⇄</button>
+          <button type="button" id="swapBtn" class="icon-btn swap-btn" title="Swap origin and destination" aria-label="Swap origin and destination"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99zM21 9l-3.99-4v3H10v2h7.01v3z"/></svg></button>
 
           <div class="field">
             <label for="to">To</label>
             <select id="to" name="to" required>
-              <option value="">Select To</option>
+              <option value="">Select destination</option>
               <option value="Dhaka">Dhaka</option>
               <option value="Chittagong">Chittagong</option>
               <option value="Sylhet">Sylhet</option>
@@ -42,79 +76,72 @@
           </div>
         </div>
 
-        <label for="travel_date">Date</label>
-        <input type="date" id="travel_date" name="travel_date" min="2026-08-06" max="2026-08-13" required />
-        <button class="btn" type="submit">Search Trip</button>
+        <div class="search-bottom">
+          <div class="field">
+            <label for="travel_date">Travel date</label>
+            <input type="date" id="travel_date" name="travel_date" required />
+          </div>
+          <button class="btn" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg> Search Trips</button>
+        </div>
+
+        <div class="chips" aria-label="Popular routes">
+          <span class="chips-label">Popular:</span>
+          <button type="button" class="chip" data-from="Dhaka" data-to="Chittagong">Dhaka &rarr; Chittagong</button>
+          <button type="button" class="chip" data-from="Dhaka" data-to="Sylhet">Dhaka &rarr; Sylhet</button>
+          <button type="button" class="chip" data-from="Chittagong" data-to="Dhaka">Chittagong &rarr; Dhaka</button>
+          <button type="button" class="chip" data-from="Sylhet" data-to="Dhaka">Sylhet &rarr; Dhaka</button>
+        </div>
       </form>
+
+      <div class="features">
+        <div class="glass feature rise" style="--d: 0.3s"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"/></svg><span><strong>Live seats</strong>Availability updates in real time</span></div>
+        <div class="glass feature rise" style="--d: 0.36s"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 18v3h3v-3h10v3h3v-6H4zm15-8h3v3h-3zM2 10h3v3H2zm15 3H7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2z"/></svg><span><strong>Pick your seat</strong>Up to four seats per booking</span></div>
+        <div class="glass feature rise" style="--d: 0.42s"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2zm0-4.5h-2v-2h2zm0-4.5h-2v-2h2z"/></svg><span><strong>Instant e-ticket</strong>Download it as a PDF</span></div>
+      </div>
     </section>
   </main>
 
+  <script src="public.js"></script>
   <script>
-    // Instead of submitting to search_trips.php (which Vercel can't run),
-    // we redirect to trip-results.html with the search criteria as query
-    // params. trip-results.html does the filtering client-side.
-    document.getElementById('searchForm').addEventListener('submit', function (e) {
-      e.preventDefault();
+    const fromEl = document.getElementById('from');
+    const toEl = document.getElementById('to');
+    const dateEl = document.getElementById('travel_date');
 
-        const from = document.getElementById('from').value;
-        const to = document.getElementById('to').value;
-      const date = document.getElementById('travel_date').value;
+    // Today's date in Dhaka is the earliest bookable day.
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+    dateEl.min = today;
+    if (!dateEl.value) dateEl.value = today;
 
-      const params = new URLSearchParams({ from, to, date });
+    // Results are filtered on the next page (Vercel cannot run the old PHP search).
+    document.getElementById('searchForm').addEventListener('submit', event => {
+      event.preventDefault();
+      if (fromEl.value && fromEl.value === toEl.value) {
+        toEl.setCustomValidity('Pick a destination different from the origin.');
+        toEl.reportValidity();
+        return;
+      }
+      const params = new URLSearchParams({ from: fromEl.value, to: toEl.value, date: dateEl.value });
       window.location.href = 'trip-results.html?' + params.toString();
     });
-    // Swap button logic
-    document.getElementById('swapBtn').addEventListener('click', function(){
-      const sFrom = document.getElementById('from');
-      const sTo = document.getElementById('to');
-      const temp = sFrom.value;
-      sFrom.value = sTo.value;
-      sTo.value = temp;
+
+    toEl.addEventListener('change', () => toEl.setCustomValidity(''));
+    fromEl.addEventListener('change', () => toEl.setCustomValidity(''));
+
+    const swapBtn = document.getElementById('swapBtn');
+    swapBtn.addEventListener('click', () => {
+      [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
+      swapBtn.classList.toggle('spin');
     });
-  </script>
-  <script>
-  (() => {
-    const clockId = 'bd-clock';
-    const timeZone = 'Asia/Dhaka';
 
-    function formatTime(date) {
-      return new Intl.DateTimeFormat('en-GB', {
-        timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-      }).format(date);
-    }
-
-    function ensureClock() {
-      let clock = document.getElementById(clockId);
-      if (!clock) {
-        clock = document.createElement('div');
-        clock.id = clockId;
-        clock.setAttribute('aria-live', 'polite');
-        clock.setAttribute('title', 'Bangladesh Standard Time (UTC+6)');
-        clock.style.position = 'fixed';
-        clock.style.top = '16px';
-        clock.style.right = '16px';
-        clock.style.zIndex = '9999';
-        clock.style.padding = '10px 14px';
-        clock.style.borderRadius = '999px';
-        clock.style.background = 'rgba(0, 0, 0, 0.82)';
-        clock.style.color = '#fff';
-        clock.style.font = '600 14px/1.1 Arial, sans-serif';
-        clock.style.letterSpacing = '0.08em';
-        clock.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.25)';
-        clock.style.pointerEvents = 'none';
-        document.body.appendChild(clock);
-      }
-      const update = () => { clock.textContent = formatTime(new Date()); };
-      update();
-      window.setInterval(update, 1000);
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', ensureClock, { once: true });
-    } else {
-      ensureClock();
-    }
-  })();
+    // Popular routes fill both ends at once.
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        fromEl.value = chip.dataset.from;
+        toEl.value = chip.dataset.to;
+        toEl.setCustomValidity('');
+        dateEl.focus();
+      });
+    });
   </script>
 </body>
 </html>

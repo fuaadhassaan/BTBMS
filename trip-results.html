@@ -2,27 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DTicket - Trip Results</title>
   <link rel="icon" href="favicon.ico" sizes="32x32" />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
-  <link rel="stylesheet" href="site.css" />
-  <link rel="stylesheet" href="ticket-booking.css" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="stylesheet" href="public.css" />
+  <!-- Before the first paint, so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('btbms-theme') === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
-  <main class="main-section">
-    <a href="index.html" class="dt-logo" aria-label="DTicket home"><img src="logo.svg" width="38" height="38" alt="" /><span>DTicket</span></a>
-    <a href="index.html" class="home-btn">Home</a>
-    <a href="ticket-booking.html" class="home-btn" style="background:#333;">&larr; New Search</a>
+  <div class="backdrop" aria-hidden="true"></div>
 
-    <section class="results" aria-label="Trip search results">
-      <h2 id="resultsHeading">Search Results</h2>
-      <div id="resultsContainer">Loading...</div>
+  <nav class="topbar" aria-label="Site">
+    <a class="brand" href="index.html" aria-label="DTicket home">
+      <img src="logo.svg" width="38" height="38" alt="" />
+      <span class="brand-text"><strong>DTicket</strong><small>The all-in-one Ticketing Website</small></span>
+    </a>
+    <div class="top-actions">
+      <div class="clock" id="clock" title="Bangladesh Standard Time (UTC+6)">--:--:--</div>
+      <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Switch between dark and light">
+        <span class="theme-moon" aria-hidden="true">&#9790;</span>
+        <span class="theme-sun" aria-hidden="true">&#9728;</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="page">
+    <ol class="steps rise" aria-label="Booking progress">
+      <li class="done"><span>Search</span></li>
+      <li class="current" aria-current="step"><span>Choose a trip</span></li>
+      <li class=""><span>Seats &amp; payment</span></li>
+    </ol>
+
+    <header class="results-head rise" style="--d: 0.05s">
+      <div>
+        <p class="eyebrow">Available trips</p>
+        <h1 class="page-title route-title" id="resultsHeading">Search results</h1>
+        <span class="date-chip" id="resultsDate" hidden><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14z"/></svg><span></span></span>
+      </div>
+      <a class="btn btn-ghost" href="ticket-booking.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg> New search</a>
+    </header>
+
+    <section class="trip-list" id="resultsContainer" aria-live="polite" aria-label="Trip search results">
+      <div class="skeleton"></div>
+      <div class="skeleton" style="animation-delay: 0.15s"></div>
+      <div class="skeleton" style="animation-delay: 0.3s"></div>
     </section>
   </main>
 
+  <script src="public.js"></script>
   <script type="module">
     import { db } from './firebase-init.js';
     import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
@@ -33,8 +73,25 @@
     const date = params.get('date') || '';
     const container = document.getElementById('resultsContainer');
 
-    document.getElementById('resultsHeading').textContent =
-      `Trips: ${params.get('from') || '—'} to ${params.get('to') || '—'}` + (date ? ` (from ${date})` : '');
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
+
+    const busIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM18 11H6V6h12z"/></svg>';
+    const arrowIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>';
+
+    // Heading: "Dhaka → Sylhet", with the date in its own chip.
+    const fromLabel = params.get('from') || 'Anywhere';
+    const toLabel = params.get('to') || 'Anywhere';
+    document.getElementById('resultsHeading').innerHTML =
+      `${escapeHtml(fromLabel)} ${arrowIcon} ${escapeHtml(toLabel)}`;
+    if (date) {
+      const chip = document.getElementById('resultsDate');
+      const pretty = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(date + 'T00:00:00Z'));
+      chip.querySelector('span').textContent = pretty;
+      chip.hidden = false;
+    }
 
     function matchesSearch(trip) {
       const okFrom = !from || (trip.origin || '').toLowerCase() === from;
@@ -43,99 +100,68 @@
       return okFrom && okTo && okDate;
     }
 
+    function emptyState(title, text) {
+      container.innerHTML = `
+        <div class="glass empty">
+          ${busIcon}
+          <h3>${title}</h3>
+          <p>${text}</p>
+          <a class="btn" href="ticket-booking.html">Change search</a>
+        </div>`;
+    }
+
     function renderTrips(trips) {
       if (!trips.length) {
-        container.innerHTML = '<p>No trips in this date, search other dates.</p>';
+        emptyState('No trips on this date', 'Try another date or route &mdash; new trips are added regularly.');
         return;
       }
 
-      let html = '<table><thead><tr>' +
-        '<th>Trip ID</th><th>Bus</th><th>Origin</th><th>Destination</th>' +
-        '<th>Departure</th><th>Arrival</th><th>Fare</th><th>Travel Date</th>' +
-        '<th>Available Seats</th><th></th>' +
-        '</tr></thead><tbody>';
-
-      for (const t of trips) {
-        html += `<tr>
-          <td>${t.trip_id}</td>
-          <td>${t.bus_id}</td>
-          <td>${t.origin}</td>
-          <td>${t.destination}</td>
-          <td>${t.departure_time}</td>
-          <td>${t.arrival_time}</td>
-          <td>${Number(t.fare || 0).toFixed(2)}</td>
-          <td>${t.travel_date}</td>
-          <td>${t.available_seats ?? 0}</td>
-          <td><button class="btn" ${Number(t.available_seats || 0) === 0 ? 'disabled' : ''} onclick="selectTrip('${t.trip_id}')">Select</button></td>
-        </tr>`;
-      }
-
-      html += '</tbody></table>';
-      container.innerHTML = html;
+      container.innerHTML = trips.map((t, i) => {
+        const seats = Number(t.available_seats || 0);
+        const seatClass = seats === 0 ? 'seats-none' : seats <= 5 ? 'seats-low' : 'seats-ok';
+        const seatText = seats === 0 ? 'Sold out' : `${seats} seat${seats === 1 ? '' : 's'} left`;
+        return `
+          <article class="glass trip-card" style="--i: ${i}">
+            <div class="trip-times">
+              <div><strong>${escapeHtml(t.departure_time)}</strong><span>${escapeHtml(t.origin)}</span></div>
+              <div class="trip-line">${busIcon}</div>
+              <div class="end"><strong>${escapeHtml(t.arrival_time)}</strong><span>${escapeHtml(t.destination)}</span></div>
+            </div>
+            <div class="trip-meta">
+              <span class="tag">Trip ${escapeHtml(t.trip_id)}</span>
+              <span class="tag">Bus ${escapeHtml(t.bus_id)}</span>
+              <span class="tag">${escapeHtml(t.travel_date)}</span>
+              <span class="tag ${seatClass}">${seatText}</span>
+            </div>
+            <div class="trip-buy">
+              <div class="fare"><small>Fare</small><strong>BDT ${Number(t.fare || 0).toFixed(2)}</strong></div>
+              <button class="btn" type="button" ${seats === 0 ? 'disabled' : ''} data-trip="${escapeHtml(t.trip_id)}">Select seats ${arrowIcon}</button>
+            </div>
+          </article>`;
+      }).join('');
     }
 
     window.selectTrip = function selectTrip(tripId) {
       window.location.href = `seat-selection.html?trip_id=${encodeURIComponent(tripId)}`;
     };
 
+    container.addEventListener('click', event => {
+      const button = event.target.closest('[data-trip]');
+      if (button && !button.disabled) window.selectTrip(button.dataset.trip);
+    });
+
     onSnapshot(collection(db, 'trips'), snapshot => {
       const trips = [];
       snapshot.forEach(docSnap => {
         const trip = docSnap.data();
-        if (matchesSearch(trip)) {
-          trips.push(trip);
-        }
+        if (matchesSearch(trip)) trips.push(trip);
       });
-      trips.sort((a, b) => String(a.trip_id).localeCompare(String(b.trip_id)));
+      trips.sort((a, b) => String(a.departure_time).localeCompare(String(b.departure_time)) || String(a.trip_id).localeCompare(String(b.trip_id)));
       renderTrips(trips);
     }, error => {
       console.error(error);
-      container.innerHTML = '<p>Unable to load trip data.</p>';
+      emptyState('Trips could not be loaded', 'Please check your connection and try again in a moment.');
     });
-  </script>
-  <script>
-  (() => {
-    const clockId = 'bd-clock';
-    const timeZone = 'Asia/Dhaka';
-
-    function formatTime(date) {
-      return new Intl.DateTimeFormat('en-GB', {
-        timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-      }).format(date);
-    }
-
-    function ensureClock() {
-      let clock = document.getElementById(clockId);
-      if (!clock) {
-        clock = document.createElement('div');
-        clock.id = clockId;
-        clock.setAttribute('aria-live', 'polite');
-        clock.setAttribute('title', 'Bangladesh Standard Time (UTC+6)');
-        clock.style.position = 'fixed';
-        clock.style.top = '16px';
-        clock.style.right = '16px';
-        clock.style.zIndex = '9999';
-        clock.style.padding = '10px 14px';
-        clock.style.borderRadius = '999px';
-        clock.style.background = 'rgba(0, 0, 0, 0.82)';
-        clock.style.color = '#fff';
-        clock.style.font = '600 14px/1.1 Arial, sans-serif';
-        clock.style.letterSpacing = '0.08em';
-        clock.style.boxShadow = '0 10px 24px rgba(0, 0, 0, 0.25)';
-        clock.style.pointerEvents = 'none';
-        document.body.appendChild(clock);
-      }
-      const update = () => { clock.textContent = formatTime(new Date()); };
-      update();
-      window.setInterval(update, 1000);
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', ensureClock, { once: true });
-    } else {
-      ensureClock();
-    }
-  })();
   </script>
 </body>
 </html>
