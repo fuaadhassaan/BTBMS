@@ -1363,3 +1363,88 @@ a {
     display: none;
   }
 }
+
+/* =============================================================
+   Payment details (bKash / Card)
+   ============================================================= */
+.pay-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--pay-accent, var(--accent));
+  border-radius: 16px;
+  background: var(--surface-2);
+  animation: pay-open 0.4s var(--ease-out) both;
+}
+
+.pay-panel[hidden] {
+  display: none;
+}
+
+@keyframes pay-open {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.pay-bkash { --pay-accent: #e2136e; }
+.pay-card { --pay-accent: var(--accent); }
+
+.pay-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.88rem;
+}
+
+.pay-logo {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--pay-accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pay-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.card-input {
+  position: relative;
+}
+
+.card-input input {
+  padding-right: 110px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* The card brand, recognised from the first digits. */
+.card-brand {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  pointer-events: none;
+}
+
+.card-brand:empty { display: none; }
+.card-brand[data-brand='visa'] { background: #1a1f71; }
+.card-brand[data-brand='mastercard'] { background: linear-gradient(90deg, #eb001b, #f79e1b); }
+.card-brand[data-brand='amex'] { background: #2e77bc; }
+
+.pay-safe {
+  line-height: 1.45;
+}

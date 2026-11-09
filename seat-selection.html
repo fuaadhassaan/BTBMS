@@ -113,9 +113,42 @@
             <select id="paymentMethod" name="paymentMethod" required>
               <option value="">Select payment method</option>
               <option value="cash">Cash</option>
-              <option value="bkash">Bkash</option>
+              <option value="bkash">bKash</option>
               <option value="card">Card</option>
             </select>
+          </div>
+
+          <!-- Shown when bKash is chosen. -->
+          <div id="bkashFields" class="pay-panel pay-bkash" hidden>
+            <p class="pay-title"><span class="pay-logo">bKash</span> Pay with your bKash account</p>
+            <div class="field">
+              <label for="bkashNumber">bKash number</label>
+              <input id="bkashNumber" type="tel" inputmode="numeric" autocomplete="tel" placeholder="01XXXXXXXXX" maxlength="11" />
+              <small class="field-hint">The 11-digit mobile number registered with bKash.</small>
+            </div>
+          </div>
+
+          <!-- Shown when Card is chosen. -->
+          <div id="cardFields" class="pay-panel pay-card" hidden>
+            <p class="pay-title"><span class="pay-logo">Card</span> Visa, Mastercard or American Express</p>
+            <div class="field">
+              <label for="cardNumber">Card number</label>
+              <div class="card-input">
+                <input id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="23" />
+                <span id="cardBrand" class="card-brand" aria-live="polite"></span>
+              </div>
+            </div>
+            <div class="pay-row">
+              <div class="field">
+                <label for="cardExpiry">Expiry date</label>
+                <input id="cardExpiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" />
+              </div>
+              <div class="field">
+                <label for="cardCvc">CVC</label>
+                <input id="cardCvc" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
+              </div>
+            </div>
+            <small class="field-hint pay-safe">&#128274; Only the last 4 digits are kept with your booking. The CVC is never stored.</small>
           </div>
 
           <div class="field">
@@ -147,7 +180,7 @@
       runTransaction,
       serverTimestamp,
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
-    import { hasDeparted, inWindow, bookingWindow, shortTime, BOOKING_WINDOW_DAYS } from './schedule.js';
+    import { hasDeparted, inWindow, bookingWindow, shortTime, dhakaNow, BOOKING_WINDOW_DAYS } from './schedule.js';
 
     const tripId = new URLSearchParams(window.location.search).get('trip_id') || 'TR1';
     const seatsContainer = document.getElementById('seats');
@@ -391,7 +424,141 @@
       setStatus('Availability refreshed.');
     }
 
-    async function createBookingTransaction(selectedLabels, passengerNames, email, contact, paymentMethod) {
+    /* =============================================================
+       Payment details
+
+       bKash asks for the bKash number; Card asks for number, expiry
+       and CVC. Everything is checked here, but only a masked summary
+       is saved with the booking ("bKash 019*****432", "Visa •••• 4242"):
+       bookings are readable by the seat map, so full card numbers and
+       the CVC never leave this page.
+       ============================================================= */
+    const paymentSelect = document.getElementById('paymentMethod');
+    const bkashPanel = document.getElementById('bkashFields');
+    const cardPanel = document.getElementById('cardFields');
+    const bkashInput = document.getElementById('bkashNumber');
+    const cardNumberInput = document.getElementById('cardNumber');
+    const cardExpiryInput = document.getElementById('cardExpiry');
+    const cardCvcInput = document.getElementById('cardCvc');
+    const cardBrandEl = document.getElementById('cardBrand');
+    const PAYMENT_LABELS = { cash: 'Cash', bkash: 'bKash', card: 'Card' };
+
+    const digitsOnly = value => String(value || '').replace(/\D/g, '');
+
+    function cardBrand(digits) {
+      if (/^3[47]/.test(digits)) return 'Amex';
+      if (/^4/.test(digits)) return 'Visa';
+      if (/^(5[1-5]|2[2-7])/.test(digits)) return 'Mastercard';
+      return '';
+    }
+
+    // The checksum every real card number satisfies (catches typos).
+    function luhnValid(digits) {
+      let sum = 0;
+      for (let i = 0; i < digits.length; i += 1) {
+        let d = Number(digits[digits.length - 1 - i]);
+        if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; }
+        sum += d;
+      }
+      return digits.length >= 13 && sum % 10 === 0;
+    }
+
+    function showPaymentPanel() {
+      const method = paymentSelect.value;
+      bkashPanel.hidden = method !== 'bkash';
+      cardPanel.hidden = method !== 'card';
+      // Required only while visible, so hidden fields never block the form.
+      bkashInput.required = method === 'bkash';
+      [cardNumberInput, cardExpiryInput, cardCvcInput].forEach(input => { input.required = method === 'card'; });
+      [bkashInput, cardNumberInput, cardExpiryInput, cardCvcInput].forEach(input => input.setCustomValidity(''));
+    }
+
+    paymentSelect.addEventListener('change', showPaymentPanel);
+
+    // A payment error goes away as soon as the field is being fixed
+    // (a "trip closed" notice stays).
+    [paymentSelect, bkashInput, cardNumberInput, cardExpiryInput, cardCvcInput].forEach(input => {
+      input.addEventListener('input', () => {
+        if (!tripClosed && statusEl.classList.contains('error')) setStatus('');
+      });
+    });
+
+    bkashInput.addEventListener('input', () => {
+      bkashInput.value = digitsOnly(bkashInput.value).slice(0, 11);
+      bkashInput.setCustomValidity('');
+    });
+
+    // 4242 4242 4242 4242 (Amex: 3782 822463 10005), with the brand shown.
+    cardNumberInput.addEventListener('input', () => {
+      const digits = digitsOnly(cardNumberInput.value).slice(0, 19);
+      const brand = cardBrand(digits);
+      cardNumberInput.value = brand === 'Amex'
+        ? [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)].filter(Boolean).join(' ')
+        : digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+      cardBrandEl.textContent = brand;
+      cardBrandEl.dataset.brand = brand.toLowerCase();
+      cardCvcInput.maxLength = brand === 'Amex' ? 4 : 3;
+      cardNumberInput.setCustomValidity('');
+    });
+
+    // MM/YY, with the slash put in as you type.
+    cardExpiryInput.addEventListener('input', event => {
+      let digits = digitsOnly(cardExpiryInput.value).slice(0, 4);
+      // "4" means April (04); "13..." means January then the year (01/3...).
+      if (digits.length === 1 && Number(digits) > 1) digits = `0${digits}`;
+      if (digits.length >= 2 && Number(digits.slice(0, 2)) > 12) digits = `0${digits}`.slice(0, 4);
+      const deleting = event.inputType && event.inputType.startsWith('delete');
+      cardExpiryInput.value = digits.length > 2 || (digits.length === 2 && !deleting) ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+      cardExpiryInput.setCustomValidity('');
+    });
+
+    cardCvcInput.addEventListener('input', () => {
+      cardCvcInput.value = digitsOnly(cardCvcInput.value).slice(0, cardCvcInput.maxLength);
+      cardCvcInput.setCustomValidity('');
+    });
+
+    function fail(input, message) {
+      input.setCustomValidity(message);
+      input.reportValidity();
+      input.focus();
+      setStatus(message, true);
+      return null;
+    }
+
+    /* Checks the details for the chosen method. Returns the masked
+       summary to save ('' for cash), or null if something is wrong. */
+    function paymentInfo(method) {
+      if (method === 'cash') return '';
+
+      if (method === 'bkash') {
+        const number = digitsOnly(bkashInput.value);
+        if (!/^01[3-9]\d{8}$/.test(number)) return fail(bkashInput, 'Enter a valid 11-digit bKash number (01XXXXXXXXX).');
+        return `bKash ${number.slice(0, 3)}*****${number.slice(-3)}`;
+      }
+
+      if (method === 'card') {
+        const digits = digitsOnly(cardNumberInput.value);
+        const brand = cardBrand(digits);
+        if (!brand) return fail(cardNumberInput, 'We accept Visa, Mastercard and American Express cards.');
+        if (!luhnValid(digits) || digits.length !== (brand === 'Amex' ? 15 : 16)) return fail(cardNumberInput, 'That card number is not valid. Please check it.');
+
+        const [mm, yy] = cardExpiryInput.value.split('/');
+        const month = Number(mm);
+        if (!/^\d{2}\/\d{2}$/.test(cardExpiryInput.value) || month < 1 || month > 12) return fail(cardExpiryInput, 'Enter the expiry date as MM/YY.');
+        const now = dhakaNow().date; // YYYY-MM-DD
+        const expiry = `20${yy}-${mm}`;
+        if (expiry < now.slice(0, 7)) return fail(cardExpiryInput, 'This card has expired.');
+
+        const cvcLength = brand === 'Amex' ? 4 : 3;
+        if (digitsOnly(cardCvcInput.value).length !== cvcLength) return fail(cardCvcInput, `Enter the ${cvcLength}-digit CVC from your card.`);
+
+        return `${brand} •••• ${digits.slice(-4)} (exp ${mm}/${yy})`;
+      }
+
+      return null;
+    }
+
+    async function createBookingTransaction(selectedLabels, passengerNames, email, contact, paymentMethod, paymentDetails = '') {
       const tripRef = doc(db, 'trips', tripId);
       const bookingRefs = selectedLabels.map(label => doc(db, 'bookings', `${tripId}_${label}`));
 
@@ -422,6 +589,7 @@
             email,
             contact_number: contact,
             payment_method: paymentMethod,
+            ...(paymentDetails ? { payment_info: paymentDetails } : {}),
             created_at: serverTimestamp(),
           });
         });
@@ -463,12 +631,15 @@
         return;
       }
 
+      const paymentDetails = paymentInfo(paymentMethod);
+      if (paymentDetails === null) return;
+
       const selectedLabels = [...selectedSeats];
       submitBtn.disabled = true;
       setStatus('Booking seats...');
 
       try {
-        await createBookingTransaction(selectedLabels, passengerNames, email, contact, paymentMethod);
+        await createBookingTransaction(selectedLabels, passengerNames, email, contact, paymentMethod, paymentDetails);
 
         selectedSeats.length = 0;
         passengerList.innerHTML = '';
@@ -486,11 +657,13 @@
           passengers: passengerNames,
           email,
           contact,
-          paymentMethod,
+          paymentMethod: paymentDetails || PAYMENT_LABELS[paymentMethod] || paymentMethod,
         };
         renderReceipt(lastBookingReceipt);
         setStatus('Your ticket(s) have been booked successfully.');
         document.getElementById('bookingForm').reset();
+        cardBrandEl.textContent = '';
+        showPaymentPanel();
       } catch (error) {
         console.error('Booking failed', error);
         setStatus(error.message || 'Booking failed. Please try again.', true);
