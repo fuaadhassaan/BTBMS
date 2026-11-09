@@ -1953,6 +1953,15 @@ body::before {
 
 .ticket dl div:last-child { border-bottom: 0; }
 .ticket dt { color: var(--muted); }
+
+.ticket .ticket-policy {
+  margin: 0;
+  padding: 10px 16px 14px;
+  border-top: 2px dashed var(--line-strong);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .ticket dd { margin: 0; text-align: right; }
 
 /* =============================================================

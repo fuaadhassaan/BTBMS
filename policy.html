@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DTicket - Cancellation Policy</title>
+  <link rel="icon" href="favicon.ico" sizes="32x32" />
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#2f55d4" />
+  <link rel="stylesheet" href="public.css" />
+  <!-- Before the first paint, so the page never flashes the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('btbms-theme') === 'light' ? 'light' : 'dark');
+      } catch (error) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <nav class="topbar" aria-label="Site">
+    <a class="brand" href="index.html" aria-label="DTicket home">
+      <img src="logo.svg" width="38" height="38" alt="" />
+      <span class="brand-text"><strong>DTicket</strong><small>The all-in-one Ticketing Website</small></span>
+    </a>
+    <div class="top-actions">
+      <a class="btn btn-ghost btn-sm" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></a>
+      <a class="btn btn-ghost btn-sm" href="ticket-booking.html" aria-label="Book a ticket"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4z"/></svg><span>Book</span></a>
+      <div class="clock" id="clock" title="Bangladesh Standard Time (UTC+6)">--:--:--</div>
+      <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Switch between dark and light">
+        <span class="theme-moon" aria-hidden="true">&#9790;</span>
+        <span class="theme-sun" aria-hidden="true">&#9728;</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="page policy-page">
+    <header class="rise">
+      <p class="eyebrow">Before you book</p>
+      <h1 class="page-title">Cancellation policy</h1>
+      <p class="page-sub">How much you get back depends on how long before departure you cancel.</p>
+    </header>
+
+    <section class="glass policy-card rise" style="--d: 0.08s" aria-labelledby="tiersTitle">
+      <h2 id="tiersTitle">Refunds</h2>
+      <div class="policy-tiers" id="policyTiers"></div>
+      <p class="field-hint" id="policyExample"></p>
+    </section>
+
+    <section class="glass policy-card rise" style="--d: 0.16s" aria-labelledby="rulesTitle">
+      <h2 id="rulesTitle">How it works</h2>
+      <ul class="policy-points" id="policyPoints"></ul>
+    </section>
+
+    <div class="policy-actions rise" style="--d: 0.24s">
+      <a class="btn" href="ticket-booking.html">Book a ticket</a>
+      <a class="btn btn-ghost" href="index.html">Back to home</a>
+    </div>
+  </main>
+
+  <script src="public.js"></script>
+  <script type="module">
+    import { CANCELLATION_TIERS, POLICY_POINTS, formatBdt } from './policy.js';
+
+    const tone = pct => (pct >= 80 ? 'good' : pct > 0 ? 'warn' : 'bad');
+    document.getElementById('policyTiers').innerHTML = CANCELLATION_TIERS.map((t, i) => `
+      <div class="tier tier-${tone(t.refundPercent)}" style="--i:${i}">
+        <strong>${t.refundPercent}%</strong>
+        <span>${t.refundPercent ? 'refund' : 'no refund'}</span>
+        <p>${t.label}</p>
+      </div>`).join('');
+
+    const fare = 1200;
+    document.getElementById('policyExample').textContent =
+      `Example, for a ${formatBdt(fare)} seat: ` +
+      CANCELLATION_TIERS.map(t => `${formatBdt((fare * t.refundPercent) / 100)} back ${t.label.toLowerCase()}`).join('; ') + '.';
+
+    document.getElementById('policyPoints').innerHTML = POLICY_POINTS.map(p => `<li>${p}</li>`).join('');
+  </script>
+</body>
+</html>

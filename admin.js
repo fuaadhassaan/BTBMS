@@ -19,6 +19,7 @@ import {
   authenticate, getStaff, setAuditActor, audit, passwordFields, checkPassword,
   generatePassword, normaliseId, ROLE_LABELS, STAFF, COUNTER_LOCATIONS,
 } from './staff.js';
+import { refundFor, describeTimeLeft, POLICY_SHORT } from './policy.js';
 import {
   collection, doc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where,
   orderBy, limit, runTransaction, serverTimestamp, writeBatch, increment,
@@ -855,7 +856,12 @@ function openTicketEdit(id) {
 async function cancelTicket(id) {
   const b = state.bookings.find(x => x.id === id);
   if (!b) return;
-  const ok = await confirmAction(`Cancel ticket ${id} for ${b.passenger_name || 'this passenger'}? Seat ${b.seat_label} goes back on sale.`, { yes: 'Cancel ticket' });
+  const trip = state.tripMap.get(b.trip_id);
+  const refund = refundFor(trip, fareOf(b));
+  const refundLine = trip
+    ? `Cancelling ${describeTimeLeft(refund.hours)}: refund ${money(refund.amount)} (${refund.percent}% of ${money(refund.paid)}${refund.fee ? `, fee ${money(refund.fee)}` : ''}).`
+    : 'The trip no longer exists; refund in full.';
+  const ok = await confirmAction(`Cancel ticket ${id} for ${b.passenger_name || 'this passenger'}? Seat ${b.seat_label} goes back on sale. ${refundLine}`, { yes: 'Cancel ticket' });
   if (!ok) return;
   try {
     await runTransaction(db, async tx => {
@@ -865,8 +871,9 @@ async function cancelTicket(id) {
       tx.delete(ticketRef);
       if (tripSnap.exists()) tx.update(tripRef, { available_seats: increment(1), updated_at: serverTimestamp() });
     });
-    audit('delete', 'bookings', id, `${b.passenger_name || ''}, seat ${b.seat_label} released`);
-    toast(`Ticket ${id} cancelled.`);
+    const refundText = trip ? `refund ${money(refund.amount)} (${refund.percent}%)` : 'full refund (trip removed)';
+    audit('delete', 'bookings', id, `${b.passenger_name || ''}, seat ${b.seat_label} released, ${refundText}`);
+    toast(`Ticket ${id} cancelled. Pay back ${trip ? money(refund.amount) : money(fareOf(b))}.`);
   } catch (error) {
     toast(error.message || 'Cancel failed.', 'error');
   }
@@ -880,10 +887,12 @@ function ticketCardHtml(b) {
     ['Departure', t ? `${shortTime(t.departure_time)} (arrives ${shortTime(t.arrival_time)})` : '—'],
     ['Bus', t?.bus_id || '—'], ['Seat', b.seat_label], ['Fare', money(fareOf(b))], ['Payment', payText(b)],
     ['Booked', `${fmtStamp(b.created_at || b.booking_time)} · ${sourceOf(b)}`],
+    ...(t && !hasDeparted(t) ? [['Refund if cancelled now', (() => { const r = refundFor(t, fareOf(b)); return `${money(r.amount)} (${r.percent}%)`; })()]] : []),
   ];
   return `<div class="ticket">
     <div class="ticket-head"><img src="logo.svg" width="40" height="40" alt="" /><div><strong>DTicket</strong><small>The all-in-one Ticketing Website</small></div><span>E-Ticket</span></div>
     <dl>${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+    <p class="ticket-policy">Cancellation: ${esc(POLICY_SHORT)} Cancel at any DTicket counter with this ticket ID.</p>
   </div>`;
 }
 
@@ -909,7 +918,7 @@ function printTicket(id) {
     <style>body{font:14px/1.45 Segoe UI,Arial,sans-serif;margin:24px;color:#111}.ticket{border:1px solid #111;border-radius:14px;overflow:hidden}
     .ticket-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#1d3fa8,#2f55d4 55%,#5a8cff);color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .ticket-head img{border-radius:10px}.ticket-head div{display:grid}.ticket-head small{opacity:.85;font-size:11px}.ticket-head span{margin-left:auto;border:1px solid #fff;border-radius:999px;padding:4px 10px;font-size:11px;letter-spacing:.14em;font-weight:700}
-    dl{margin:0;padding:6px 16px 14px}dl div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed #bbb}dl div:last-child{border:0}dt{color:#555;font-weight:600}dd{margin:0;text-align:right}</style></head>
+    .ticket-policy{margin:0;padding:10px 16px 14px;border-top:2px dashed #bbb;color:#444;font-size:12px}dl{margin:0;padding:6px 16px 14px}dl div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed #bbb}dl div:last-child{border:0}dt{color:#555;font-weight:600}dd{margin:0;text-align:right}</style></head>
     <body>${ticketCardHtml(b)}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
   win.document.close();
 }

@@ -1206,6 +1206,14 @@ a {
   font-size: 12px;
 }
 
+/* The policy line on the ticket sits right under the issue line. */
+.ticket-foot.ticket-policy {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: 0;
+  line-height: 1.5;
+}
+
 .print-btn {
   display: none;
   width: 100%;
@@ -1447,4 +1455,144 @@ a {
 
 .pay-safe {
   line-height: 1.45;
+}
+
+/* =============================================================
+   Cancellation policy: the policy page and the booking-page box
+   ============================================================= */
+.policy-page {
+  max-width: 900px;
+}
+
+.policy-card {
+  margin-top: 22px;
+  padding: clamp(20px, 3vw, 28px);
+}
+
+.policy-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+}
+
+.policy-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tier {
+  --tone: var(--accent);
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tone) 10%, transparent);
+  animation: rise 0.5s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+.tier-good { --tone: var(--good); }
+.tier-warn { --tone: var(--warn); }
+.tier-bad { --tone: var(--bad); }
+
+.tier strong {
+  display: block;
+  color: var(--tone);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.tier span {
+  color: var(--tone);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tier p {
+  margin: 10px 0 0;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.policy-points {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.policy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* ---- the box on the seat page ---- */
+.policy-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warn);
+  border-radius: 14px;
+  background: var(--surface-2);
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+
+.policy-box strong {
+  color: var(--text);
+}
+
+.policy-box ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.policy-box a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.agree input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 680px) {
+  .policy-tiers {
+    grid-template-columns: 1fr;
+  }
+}
+
+.policy-link {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.policy-link a {
+  color: var(--accent);
+  font-weight: 600;
 }

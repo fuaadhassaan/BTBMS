@@ -2,6 +2,7 @@ import { db } from './firebase-init.js';
 import { HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
 import { ensureSchedule, dhakaNow, shortTime } from './schedule.js';
 import { authenticate, getStaff, setAuditActor, audit } from './staff.js';
+import { refundFor, describeTimeLeft, formatBdt, POLICY_SHORT } from './policy.js';
 import {
   collection,
   doc,
@@ -437,7 +438,15 @@ async function handleTicketDelete(event) {
   event.preventDefault();
   const ticketId = String(new FormData(event.target).get('ticket_id') || '').trim();
   if (!ticketId) return;
-  if (!confirm(`Delete ticket ${ticketId}?`)) return;
+
+  // What the cancellation policy pays back, cancelling right now.
+  const known = state.bookings.find(item => (item.ticket_id || item.id) === ticketId);
+  const knownTrip = known ? state.trips.find(t => (t.trip_id || t.id) === known.trip_id) : null;
+  const refund = knownTrip ? refundFor(knownTrip, knownTrip.fare) : null;
+  const refundLine = refund
+    ? `\n\nCancelling ${describeTimeLeft(refund.hours)}: refund ${formatBdt(refund.amount)} (${refund.percent}% of ${formatBdt(refund.paid)}).`
+    : '';
+  if (!confirm(`Cancel ticket ${ticketId}? The seat goes back on sale.${refundLine}`)) return;
 
   try {
     const ticketRef = doc(db, 'bookings', ticketId);
@@ -457,8 +466,9 @@ async function handleTicketDelete(event) {
       transaction.delete(ticketRef);
     });
 
-    setMessage('ticketDeleteMsg', `Ticket ${ticketId} deleted.`, 'success');
-    audit('delete', 'bookings', ticketId, 'Ticket cancelled, seat released');
+    const refundText = refund ? `Pay back ${formatBdt(refund.amount)} (${refund.percent}%).` : '';
+    setMessage('ticketDeleteMsg', `Ticket ${ticketId} cancelled. ${refundText}`.trim(), 'success');
+    audit('delete', 'bookings', ticketId, `Ticket cancelled, seat released${refund ? `, refund ${formatBdt(refund.amount)} (${refund.percent}%)` : ''}`);
     event.target.reset();
   } catch (error) {
     setMessage('ticketDeleteMsg', error.message || 'Failed to delete ticket.', 'error');
@@ -684,6 +694,8 @@ async function startSession() {
   showApp();
   setActiveSection('dashboard');
   watchNotices();
+  const policyNote = document.getElementById('cmPolicyNote');
+  if (policyNote) policyNote.innerHTML = `Refunds follow the <a href="policy.html" target="_blank" rel="noopener">cancellation policy</a>: ${POLICY_SHORT}`;
 }
 
 /* Notices posted by an admin for counter managers, newest first. */
