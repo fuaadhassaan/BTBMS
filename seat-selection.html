@@ -10,6 +10,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
+  <link rel="modulepreload" href="firebase-init.js" />
+  <link rel="modulepreload" href="schedule.js" />
+  <link rel="modulepreload" href="policy.js" />
   <link rel="stylesheet" href="public.css" />
   <!-- Before the first paint, so the page never flashes the wrong theme. -->
   <script>
@@ -387,10 +392,10 @@
       setStatus(reason, true);
     }
 
-    async function loadTripMeta() {
-      try {
-        const tripRef = doc(db, 'trips', tripId);
-        const snap = await getDoc(tripRef);
+    /* Applies a trip snapshot: seats left, price, and whether it can
+       still be booked. Used by the live listener and by the fresh read
+       made at the moment of booking. */
+    function applyTripSnapshot(snap) {
         if (snap.exists()) {
           tripDocData = snap.data();
           const available = Number(tripDocData.available_seats ?? 0);
@@ -405,9 +410,23 @@
         } else {
           closeTrip('This trip could not be found. Please search again.');
         }
+    }
+
+    // A fresh read from the server (used right before booking).
+    async function loadTripMeta() {
+      try {
+        applyTripSnapshot(await getDoc(doc(db, 'trips', tripId)));
       } catch (error) {
         console.error('Trip load failed', error);
       }
+    }
+
+    // Seats left, fare and times update the moment anyone changes them.
+    function listenTrip() {
+      onSnapshot(doc(db, 'trips', tripId), applyTripSnapshot, error => {
+        console.error('Trip listener failed', error);
+        loadTripMeta();
+      });
     }
 
     function listenBookings() {
@@ -437,6 +456,9 @@
     }
 
     async function refreshAvailability() {
+      const button = document.getElementById('refreshBtn');
+      button.classList.add('spinning');
+      setTimeout(() => button.classList.remove('spinning'), 700);
       setStatus('Refreshing seat availability...');
       await loadTripMeta();
       renderPassengerFields();
@@ -706,9 +728,12 @@
     buildSeats();
     renderPassengerFields();
     syncSeatStyles();
-    loadTripMeta();
+    listenTrip();
     listenBookings();
-    setInterval(loadTripMeta, 30000);
+    // Departure is a matter of the clock, not the data: check it each minute.
+    setInterval(() => {
+      if (tripDocData && hasDeparted(tripDocData)) closeTrip('This bus has already departed. Please choose another trip.');
+    }, 60000);
   </script>
 </body>
 </html>

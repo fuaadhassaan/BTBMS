@@ -1629,5 +1629,16 @@ function bind() {
   setInterval(() => { if (state.section === 'dashboard') renderDashboard(); }, 60000);
 }
 
+
+/* The refresh button (left of the clock): spin, then reload. The local
+   database cache makes the reload near-instant. */
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-refresh]');
+  if (!button) return;
+  button.classList.add('spinning');
+  button.disabled = true;
+  setTimeout(() => window.location.reload(), 250);
+});
+
 bind();
 startSession();

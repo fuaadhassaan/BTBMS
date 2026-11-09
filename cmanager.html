@@ -12,6 +12,16 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
+  <link rel="modulepreload" href="firebase-init.js" />
+  <link rel="modulepreload" href="console-app.js" />
+  <link rel="modulepreload" href="schedule.js" />
+  <link rel="modulepreload" href="staff.js" />
+  <link rel="modulepreload" href="policy.js" />
+  <link rel="modulepreload" href="accounts.js" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
@@ -73,7 +83,8 @@
             <h1>Dashboard</h1>
             <p class="section-note">Live from the database. Times are Dhaka time.</p>
           </div>
-          <div class="clock-pill" id="adminClock">--:--:--</div>
+          <div class="clock-group"><button type="button" class="icon-refresh" data-refresh title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
+          <div class="clock-pill" id="adminClock">--:--:--</div></div>
         </div>
 
         <div class="metric-grid">

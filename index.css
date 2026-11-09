@@ -1054,3 +1054,17 @@ html {
     display: none;
   }
 }
+
+/* Refresh button: spins while the page reloads. */
+[data-refresh].spinning svg,
+#refreshBtn.spinning svg {
+  animation: refresh-spin 0.7s linear infinite;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+.refresh-btn svg {
+  display: block;
+}

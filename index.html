@@ -10,6 +10,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#2f55d4" />
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin />
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin />
+  <link rel="modulepreload" href="firebase-init.js" />
+  <link rel="modulepreload" href="staff.js" />
+  <link rel="modulepreload" href="accounts.js" />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="index.css" />
 
@@ -36,6 +41,7 @@
         </span>
       </a>
       <div class="top-row-right">
+        <button type="button" class="theme-toggle refresh-btn" data-refresh title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"/></svg></button>
         <div class="clock" id="landing-clock" aria-label="Current time in Bangladesh"
              title="Bangladesh Standard Time (UTC+6)">00:00:00</div>
         <button type="button" class="theme-toggle" data-theme-toggle

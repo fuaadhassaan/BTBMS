@@ -94,7 +94,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--veil), url('hvm1.png') center 30% / cover no-repeat;
+  background: var(--veil), url('hvm1.webp') center 30% / cover no-repeat;
 }
 
 .backdrop::after {
@@ -1618,4 +1618,14 @@ a {
 .home-logo:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+/* Refresh button: spins while the page reloads. */
+[data-refresh].spinning svg,
+#refreshBtn.spinning svg {
+  animation: refresh-spin 0.7s linear infinite;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
 }
