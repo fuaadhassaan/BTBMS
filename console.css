@@ -272,7 +272,9 @@ body::before {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
-  font: 500 14px/1.2 inherit;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -424,7 +426,9 @@ body::before {
   background: var(--panel);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  font: 600 14px/1 inherit;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
@@ -904,7 +908,9 @@ body::before {
   border: 0;
   border-radius: var(--radius-sm);
   color: #fff;
-  font: 600 14px/1 inherit;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
   font-family: inherit;
   cursor: pointer;
   transition: transform 0.2s var(--ease-out), box-shadow 0.25s ease, background-color 0.2s ease, filter 0.2s ease;

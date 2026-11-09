@@ -40,7 +40,7 @@
           <span class="theme-moon" aria-hidden="true">&#9790;</span>
           <span class="theme-sun" aria-hidden="true">&#9728;</span>
         </button>
-        <button type="button" class="btn-top-login" id="open-login" aria-haspopup="dialog">
+        <button type="button" class="btn-pill btn-top-login" id="open-login" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg>
           Log In
         </button>
@@ -60,24 +60,18 @@
           An easy, reliable and fast ticket booking service with ticket management features &mdash; like never before.
         </p>
 
-        <a href="#access" class="hero-scroll reveal" style="--in: 0.52s"
-           aria-label="Scroll down to book a ticket">
-          <span class="hero-scroll-mouse" aria-hidden="true"></span>
-          <span class="hero-scroll-text">Scroll to get started</span>
-        </a>
+        <!-- The wrapper carries the entrance; the button inside keeps its
+             own hover movement (an element's finished animation would
+             otherwise hold its transform and cancel the hover lift). -->
+        <div class="hero-actions reveal" style="--in: 0.52s">
+          <a class="btn-pill btn-hero-book" href="ticket-booking.html">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M22 10V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4a2 2 0 0 1 0 4v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 1 0-4zm-9 7.5h-2v-2h2zm0-4.5h-2v-2h2zm0-4.5h-2v-2h2z"/></svg>
+            Book a Ticket
+          </a>
+          <p class="hero-note">No sign-in needed &mdash; pick up to four seats and pay.</p>
+        </div>
       </div>
     </header>
-
-    <main class="main-content" id="access">
-      <section class="access-panel">
-        <h2>Book a ticket</h2>
-        <p class="access-note">
-          Travelling? Search buses by city and date, pick up to four seats and pay &mdash; no sign-in needed.
-        </p>
-        <a class="btn-login btn-book" href="ticket-booking.html">Book a Ticket</a>
-
-      </section>
-    </main>
 
     <footer class="site-footer">
       <p class="foot-line">Developed &amp; All Rights Reserved by Md. Fuad Hasan&copy;</p>

@@ -765,16 +765,8 @@ html {
 }
 
 /* ---------------------------------------------------------------
-   DTicket additions: the passenger's way in.
+   DTicket additions
    --------------------------------------------------------------- */
-.btn-book {
-  display: inline-block;
-  min-width: min(420px, 100%);
-  text-decoration: none;
-  text-align: center;
-}
-
-.btn-book:focus-visible,
 .btn-login:focus-visible {
   outline: 2px solid #5a8cff;
   outline-offset: 3px;
@@ -833,7 +825,14 @@ html {
   box-shadow: 0 8px 22px rgba(64, 110, 255, 0.35);
 }
 
-.btn-top-login {
+/* ---------------------------------------------------------------
+   The pill buttons: Log In in the top bar and Book a Ticket in the
+   hero share one look and one set of movements.
+   --------------------------------------------------------------- */
+.btn-pill {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -842,19 +841,93 @@ html {
   border-radius: 999px;
   background: var(--button-fill);
   color: var(--on-fill);
-  font: 600 0.92rem/1 inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
   font-family: inherit;
+  text-decoration: none;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, box-shadow 0.25s ease;
 }
 
-.btn-top-login:hover {
-  transform: translateY(-1px);
+/* A band of light that sweeps across on hover. */
+.btn-pill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-pill svg {
+  flex: none;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-pill:hover {
+  transform: translateY(-2px);
   background: rgba(64, 124, 255, 0.98);
   box-shadow: 0 10px 26px rgba(34, 85, 190, 0.35);
 }
 
-.btn-top-login:focus-visible,
+.btn-pill:hover::after {
+  transform: translateX(120%);
+}
+
+.btn-pill:hover svg {
+  transform: scale(1.15) rotate(-8deg);
+}
+
+.btn-pill:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* The hero's Book a Ticket: the same pill, larger, with a soft
+   pulse of light around it so the eye finds it first. */
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.btn-hero-book {
+  gap: 10px;
+  padding: 15px 30px;
+  font-size: 1.05rem;
+  animation: book-glow 2.8s ease-in-out 1.8s infinite;
+}
+
+.btn-hero-book:hover {
+  animation-play-state: paused;
+  box-shadow: 0 16px 36px rgba(34, 85, 190, 0.45);
+}
+
+@keyframes book-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(90, 140, 255, 0.45); }
+  60% { box-shadow: 0 0 0 14px rgba(90, 140, 255, 0); }
+}
+
+.hero-note {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.88rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-hero-book {
+    animation: none;
+  }
+
+  .btn-pill::after {
+    display: none;
+  }
+}
+
+.btn-pill:focus-visible,
 .dialog-close:focus-visible {
   outline: 2px solid #5a8cff;
   outline-offset: 2px;
