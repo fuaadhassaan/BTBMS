@@ -4,7 +4,8 @@
    checked here; it is handed to the console, which checks it and sends
    the person back here with a reason if it is wrong. */
 
-import { ACCOUNTS, ROLES, HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
+import { ROLES, HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
+import { lookupRoles } from './staff.js';
 
 const $ = selector => document.querySelector(selector);
 
@@ -105,7 +106,10 @@ function renderRoles(list) {
   if (chosenRole) markChosen();
 }
 
-function lookUp() {
+/* Staff accounts live in the database, so the lookup is a read. The
+   field may have moved on by the time it answers, so the answer is
+   used only if it is still for what is typed. */
+async function lookUp() {
   const id = normalisedId();
 
   if (!id) {
@@ -114,14 +118,25 @@ function lookUp() {
     return;
   }
 
-  const account = ACCOUNTS[id];
-  if (!account) {
+  setStatus('Checking…');
+  let roles = [];
+  try {
+    roles = (await lookupRoles(id)).filter(role => ROLES[role]);
+  } catch (error) {
+    if (normalisedId() !== id) return;
     renderRoles([]);
-    setStatus('That User ID is not registered.', 'error');
+    setStatus('Could not reach the server. Check your connection and try again.', 'error');
+    return;
+  }
+  if (normalisedId() !== id) return;
+
+  if (!roles.length) {
+    renderRoles([]);
+    setStatus('That User ID is not registered or is switched off.', 'error');
     return;
   }
 
-  renderRoles(account.roles);
+  renderRoles(roles);
   setStatus('');
 }
 
@@ -189,7 +204,7 @@ toggle.addEventListener('click', () => {
 });
 
 /* ---- handing the attempt over to the console ---- */
-form.addEventListener('submit', event => {
+form.addEventListener('submit', async event => {
   event.preventDefault();
 
   const id = normalisedId();
@@ -203,7 +218,7 @@ form.addEventListener('submit', event => {
 
   /* Typed and submitted in one motion, before the lookup ran. */
   window.clearTimeout(lookUpTimer);
-  lookUp();
+  if (!offered.length) await lookUp();
 
   if (!offered.length) return;
 

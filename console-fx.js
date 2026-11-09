@@ -89,7 +89,8 @@ function animateCounter(el) {
 
 function write(el, state, value) {
   state.current = value;
-  state.written = state.pre + value.toFixed(state.decimals) + state.post;
+  // Keeps thousands separators (BDT 100,800.00) while counting.
+  state.written = state.pre + value.toLocaleString('en-US', { minimumFractionDigits: state.decimals, maximumFractionDigits: state.decimals }) + state.post;
   el.textContent = state.written;
 }
 

@@ -1,6 +1,7 @@
 import { db } from './firebase-init.js';
 import { HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
 import { ensureSchedule } from './schedule.js';
+import { authenticate, getStaff, setAuditActor, audit } from './staff.js';
 import {
   collection,
   doc,
@@ -15,7 +16,6 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
 const CM_USER = 'CM1';
-const CM_PASS = 'CD1';
 const SESSION_KEY = 'btbms-cmanager-auth';
 const DHAKA_TIME_ZONE = 'Asia/Dhaka';
 const DEFAULT_SEATS = 28;
@@ -397,6 +397,7 @@ async function handleTicketCreate(event) {
       });
     });
     setMessage('ticketCreateMsg', `Ticket ${ticketId} created.`, 'success');
+    audit('create', 'bookings', ticketId, 'Ticket issued at the counter');
     event.target.reset();
   } catch (error) {
     setMessage('ticketCreateMsg', error.message || 'Failed to create ticket.', 'error');
@@ -420,6 +421,7 @@ async function handleTicketUpdate(event) {
       updated_at: serverTimestamp(),
     });
     setMessage('ticketUpdateMsg', `Ticket ${ticketId} updated.`, 'success');
+    audit('update', 'bookings', ticketId, 'Passenger details edited');
   } catch (error) {
     setMessage('ticketUpdateMsg', error.message || 'Failed to update ticket.', 'error');
   }
@@ -450,6 +452,7 @@ async function handleTicketDelete(event) {
     });
 
     setMessage('ticketDeleteMsg', `Ticket ${ticketId} deleted.`, 'success');
+    audit('delete', 'bookings', ticketId, 'Ticket cancelled, seat released');
     event.target.reset();
   } catch (error) {
     setMessage('ticketDeleteMsg', error.message || 'Failed to delete ticket.', 'error');
@@ -506,6 +509,7 @@ async function handleRequestCreate(event) {
       source: 'Counter Manager',
     });
     setMessage('requestCreateMsg', 'Request sent to Admin!', 'success');
+    audit('create', 'requests', String(form.get('subject') || ''), 'Request sent to Admin');
     event.target.reset();
     document.getElementById('requestCreateRequestedBy').value = state.loggedInUserId || CM_USER;
   } catch (error) {
@@ -547,23 +551,10 @@ function bindForms() {
 }
 
 function bindLogin() {
+  // Sign-in happens on the landing page; the old in-page form just goes there.
   els.loginForm.addEventListener('submit', event => {
     event.preventDefault();
-    const form = new FormData(event.target);
-    const userId = String(form.get('userid') || '').trim();
-    const password = String(form.get('password') || '').trim();
-
-    if (userId === CM_USER && password === CM_PASS) {
-      state.loggedInUserId = userId;
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ userId, loggedInAt: Date.now() }));
-      setLoginMessage('');
-      document.getElementById('requestCreateRequestedBy').value = userId;
-      showApp();
-      setActiveSection('dashboard');
-      return;
-    }
-
-    setLoginMessage('Invalid credentials. Use CM1 / CD1.');
+    window.location.href = 'index.html';
   });
 }
 
@@ -627,30 +618,75 @@ function bootstrap() {
     if (!els.appView.classList.contains('hidden')) renderDashboard();
   }, 1000);
 
+  startSession();
+}
+
+/* Signs in from the landing page's hand-off, or resumes a session.
+   A resumed session is re-checked against the staff record, so an
+   account an admin switches off is signed out on its next visit. */
+async function startSession() {
   const handoff = takeHandoff('cmanager');
   if (handoff) {
-    if (handoff.userId === CM_USER && handoff.password === CM_PASS) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: handoff.userId, loggedInAt: Date.now() }));
-    } else {
-      showLogin('Wrong User ID or password.');
+    let result;
+    try {
+      result = await authenticate(handoff.userId, handoff.password, 'cmanager');
+    } catch (error) {
+      showLogin('Could not reach the server to check your password. Try again.');
       return;
     }
+    if (!result.ok) {
+      showLogin(result.reason);
+      return;
+    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...result.user, userId: result.user.id, loggedInAt: Date.now() }));
   }
 
-  const session = localStorage.getItem(SESSION_KEY);
-  if (session) {
-    try {
-      const parsed = JSON.parse(session);
-      state.loggedInUserId = parsed.userId || CM_USER;
-    } catch (e) {
-      state.loggedInUserId = CM_USER;
-    }
-    document.getElementById('requestCreateRequestedBy').value = state.loggedInUserId;
-    showApp();
-    setActiveSection('dashboard');
-  } else {
-    showLogin();
+  let session = null;
+  try {
+    session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+  } catch (error) {
+    session = null;
   }
+  if (!session?.userId) {
+    showLogin();
+    return;
+  }
+
+  try {
+    const record = await getStaff(session.userId);
+    if (record && (record.active === false || record.role !== 'cmanager')) {
+      localStorage.removeItem(SESSION_KEY);
+      showLogin('Your account has been switched off. Ask an admin.');
+      return;
+    }
+    if (record) session.name = record.name || session.name;
+  } catch (error) {
+    /* offline: carry on with the session we have */
+  }
+
+  state.loggedInUserId = session.userId;
+  setAuditActor({ id: session.userId, name: session.name || session.userId, role: 'cmanager' });
+  document.getElementById('requestCreateRequestedBy').value = state.loggedInUserId;
+  document.body.dataset.roleName = session.name || 'Counter Manager';
+  showApp();
+  setActiveSection('dashboard');
+  watchNotices();
+}
+
+/* Notices posted by an admin for counter managers, newest first. */
+function watchNotices() {
+  const box = document.getElementById('cmNotices');
+  if (!box) return;
+  onSnapshot(collection(db, 'notices'), snapshot => {
+    const today = new Date().toISOString().slice(0, 10);
+    const notices = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(n => n.audience !== 'admin' && (!n.expires_on || n.expires_on >= today))
+      .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.posted_on || '').localeCompare(String(a.posted_on || '')));
+    box.innerHTML = notices.length
+      ? notices.map(n => `<article class="notice${n.pinned ? ' is-pinned' : ''}"><h3>${escapeHtml(n.title)}</h3><p>${escapeHtml(n.body)}</p><small>${escapeHtml(n.posted_by_name || 'Admin')} · ${escapeHtml(n.posted_on || '')}</small></article>`).join('')
+      : '<p class="section-note">No notices right now.</p>';
+  }, () => { box.innerHTML = '<p class="section-note">Notices could not be loaded.</p>'; });
 }
 
 window.loadTicketToForm = loadTicketToForm;

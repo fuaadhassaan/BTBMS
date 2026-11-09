@@ -67,10 +67,55 @@ service cloud.firestore {
       allow delete: if true;
     }
 
-    // ---- buses: reference data, changed from the Firebase console only ----
+    // ---- buses: the fleet, managed in the Admin console ----
     match /buses/{busId} {
       allow read: if true;
-      allow write: if false;
+      allow create, update: if shortText(request.resource.data.bus_id, 20)
+        && request.resource.data.bus_id == busId
+        && request.resource.data.total_seats is number
+        && request.resource.data.total_seats >= 1 && request.resource.data.total_seats <= 60
+        && request.resource.data.size() <= 15;
+      allow delete: if true;
+    }
+
+    // ---- staff: Admin / Counter Manager accounts (passwords only as
+    // salted PBKDF2 hashes, never in plain text) ----
+    function validStaff(d) {
+      return shortText(d.staff_id, 12)
+        && d.role in ['admin', 'cmanager']
+        && shortText(d.name, 60)
+        && d.password_hash is string && d.password_hash.size() == 64
+        && d.password_salt is string && d.password_salt.size() == 32
+        && (!('active' in d) || d.active is bool)
+        && d.size() <= 20;
+    }
+
+    match /staff/{staffId} {
+      allow read: if true;
+      allow create: if validStaff(request.resource.data) && request.resource.data.staff_id == staffId;
+      allow update: if validStaff(request.resource.data) && request.resource.data.staff_id == resource.data.staff_id;
+      allow delete: if true;
+    }
+
+    // ---- audit: append-only log of console changes ----
+    match /audit/{entryId} {
+      allow read: if true;
+      allow create: if request.resource.data.action in ['create', 'update', 'delete', 'sign-in']
+        && shortText(request.resource.data.target, 20)
+        && shortText(request.resource.data.subject, 120)
+        && shortText(request.resource.data.summary, 300)
+        && request.resource.data.size() <= 10;
+      allow update, delete: if false;
+    }
+
+    // ---- notices: posted by admins, shown to counter managers ----
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow create, update: if shortText(request.resource.data.title, 120)
+        && shortText(request.resource.data.body, 2000)
+        && request.resource.data.audience in ['all', 'cmanager', 'admin']
+        && request.resource.data.size() <= 15;
+      allow delete: if true;
     }
 
     // ---- schedule/window: how far ahead trips have been generated ----
