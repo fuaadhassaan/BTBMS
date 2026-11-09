@@ -1,3 +1,5 @@
 firestore.rules
 firebase.json
 .firebaserc
+scripts/
+.github/

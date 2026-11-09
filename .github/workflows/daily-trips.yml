@@ -1,0 +1,43 @@
+# Keeps the next 14 days of DTicket trips on sale, every night, with no
+# code changes and no visitors needed. See scripts/generate-trips.mjs.
+name: Daily trips
+
+on:
+  schedule:
+    # 18:05 UTC = 00:05 in Dhaka (UTC+6): right after a new day opens.
+    - cron: '5 18 * * *'
+  # Can also be run by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  # Needed only for the keep-alive commit below.
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Add the new day's trips
+        run: node scripts/generate-trips.mjs
+
+      # GitHub pauses scheduled jobs in a repository with no commits for
+      # 60 days. If the last commit is 50+ days old, make an empty one so
+      # this job keeps running even when nobody touches the code.
+      - name: Keep the schedule alive
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if [ $(( (now - last) / 86400 )) -ge 50 ]; then
+            git config user.name "dticket-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Keep the daily trips job active"
+            git push
+          else
+            echo "Last commit is recent; nothing to do."
+          fi
