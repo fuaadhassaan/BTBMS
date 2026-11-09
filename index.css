@@ -1024,3 +1024,33 @@ html {
     animation: none;
   }
 }
+
+/* The footer is one line; separators only where it fits. */
+.site-footer {
+  padding: 14px 20px;
+}
+
+.foot-line {
+  column-gap: 10px;
+  row-gap: 2px;
+  white-space: nowrap;
+}
+
+.foot-sep {
+  opacity: 0.5;
+}
+
+.profile-link {
+  display: inline-flex;
+  color: inherit;
+}
+
+@media (max-width: 900px) {
+  .foot-line {
+    white-space: normal;
+  }
+
+  .foot-sep {
+    display: none;
+  }
+}

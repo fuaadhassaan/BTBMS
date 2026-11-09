@@ -1596,3 +1596,26 @@ a {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Home, top right: just the DT logo. */
+.home-logo {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 11px;
+  transition: transform 0.35s var(--ease-spring), box-shadow 0.25s ease;
+}
+
+.home-logo img {
+  display: block;
+  border-radius: 11px;
+}
+
+.home-logo:hover {
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 10px 24px rgba(64, 110, 255, 0.4);
+}
+
+.home-logo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

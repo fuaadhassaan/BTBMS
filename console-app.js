@@ -25,7 +25,13 @@ import {
   orderBy, limit, runTransaction, serverTimestamp, writeBatch, increment,
 } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
-const SESSION_KEY = 'btbms-admin-auth';
+/* One console, two roles. The page says which (body data-console):
+   admin.html is the Admin console, cmanager.html the Counter console.
+   A Counter Manager gets the same screens minus Users and the Audit
+   log, read-only trips / buses / notices, and only their own requests. */
+const ROLE = document.body.dataset.console === 'cmanager' ? 'cmanager' : 'admin';
+const IS_ADMIN = ROLE === 'admin';
+const SESSION_KEY = IS_ADMIN ? 'btbms-admin-auth' : 'btbms-cmanager-auth';
 const IDLE_MINUTES = 30;
 const CITIES = ['Dhaka', 'Chittagong', 'Sylhet'];
 const SEAT_LABELS = [
@@ -234,7 +240,13 @@ const selectHtml = (name, options, selected = '', attrs = '') => `<select name="
 /* =============================================================
    Navigation
    ============================================================= */
-const SECTIONS = ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'users', 'passengers', 'requests', 'notices', 'audit', 'account'];
+const SECTIONS = IS_ADMIN
+  ? ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'users', 'passengers', 'requests', 'notices', 'audit', 'account']
+  : ['dashboard', 'stats', 'trips', 'tickets', 'buses', 'passengers', 'requests', 'notices', 'account'];
+
+/* Requests this console deals with: all of them for an admin, only
+   your own for a counter manager. */
+const myRequests = () => (IS_ADMIN ? state.requests : state.requests.filter(r => r.requested_by === state.user?.id));
 
 function setActiveSection(name) {
   if (!SECTIONS.includes(name)) name = 'dashboard';
@@ -261,7 +273,7 @@ function renderSection(name) {
 }
 
 function renderBadges() {
-  const pending = state.requests.filter(r => (r.status || 'Pending') === 'Pending').length;
+  const pending = myRequests().filter(r => (r.status || 'Pending') === 'Pending').length;
   const badge = $('#badgeRequests');
   badge.hidden = !pending;
   badge.textContent = pending;
@@ -357,7 +369,7 @@ function renderDashboard() {
   const windowTrips = state.trips.filter(t => t.travel_date >= win.first && t.travel_date <= win.last);
   const cap = sum(windowTrips, capacityOf);
   const sold = sum(windowTrips, soldOf);
-  const pending = state.requests.filter(r => (r.status || 'Pending') === 'Pending');
+  const pending = myRequests().filter(r => (r.status || 'Pending') === 'Pending');
 
   $('#mTripsToday').textContent = String(tripsToday.length);
   $('#mSoldToday').textContent = String(soldToday.length);
@@ -385,7 +397,7 @@ function renderDashboard() {
 
   // Needs attention
   const items = [];
-  if (pending.length) items.push(['warn', `${plural(pending.length, 'request')} waiting for review`, 'requests']);
+  if (pending.length) items.push(['warn', IS_ADMIN ? `${plural(pending.length, 'request')} waiting for review` : `${plural(pending.length, 'of your requests')} still pending with Admin`, 'requests']);
   const upcoming = state.trips.filter(t => !hasDeparted(t, now) && t.travel_date <= win.last);
   const soon = upcoming.filter(t => t.travel_date === today && fullTime(t.departure_time) <= addMinutes(now.time, 180));
   soon.forEach(t => items.push(['info', `${shortTime(t.departure_time)} ${routeOf(t)} leaves soon · ${soldOf(t)}/${capacityOf(t)} sold`, 'trips']));
@@ -393,15 +405,15 @@ function renderDashboard() {
   if (almostFull.length) items.push(['warn', `${plural(almostFull.length, 'trip')} almost full`, 'trips']);
   const soldOut = upcoming.filter(t => Number(t.available_seats) <= 0);
   if (soldOut.length) items.push(['bad', `${plural(soldOut.length, 'trip')} sold out`, 'trips']);
-  const resting = state.buses.filter(b => b.status && b.status !== 'active');
+  const resting = IS_ADMIN ? state.buses.filter(b => b.status && b.status !== 'active') : [];
   resting.forEach(bus => {
     const n = upcoming.filter(t => t.bus_id === bus.id).length;
     if (n) items.push(['bad', `${bus.id} is ${bus.status} but has ${plural(n, 'upcoming trip')}`, 'buses']);
   });
   const usedBuses = new Set(upcoming.map(t => t.bus_id).filter(Boolean));
   const missing = [...usedBuses].filter(id => !state.buses.some(b => b.id === id));
-  if (missing.length) items.push(['warn', `${missing.join(', ')} not in the bus list`, 'buses']);
-  if ((state.marker?.generated_through || '') < win.last) items.push(['warn', 'Schedule is not filled for the full two weeks', 'trips']);
+  if (IS_ADMIN && missing.length) items.push(['warn', `${missing.join(', ')} not in the bus list`, 'buses']);
+  if (IS_ADMIN && (state.marker?.generated_through || '') < win.last) items.push(['warn', 'Schedule is not filled for the full two weeks', 'trips']);
 
   $('#attention').innerHTML = items.length
     ? items.map(([tone, text, go]) => `<li class="att att-${tone}"><span>${esc(text)}</span><button type="button" class="link-btn" data-go="${go}">Open &rarr;</button></li>`).join('')
@@ -415,7 +427,7 @@ function renderDashboard() {
 
   // Recent activity
   $('#recentActivity').innerHTML = state.audit.length
-    ? state.audit.slice(0, 8).map(activityLine).join('')
+    ? state.audit.filter(a => IS_ADMIN || a.actor_id === state.user.id).slice(0, 8).map(activityLine).join('') || '<li class="section-note">Nothing yet.</li>'
     : '<li class="section-note">Nothing yet. Changes made in the consoles appear here.</li>';
 }
 
@@ -558,8 +570,8 @@ function renderTrips() {
         <td>${pill(s, tone)}</td>
         <td class="actions-col">
           <button type="button" class="mini-btn alt" data-action="trip-seats" data-id="${id}">Seats</button>
-          <button type="button" class="mini-btn alt" data-action="trip-edit" data-id="${id}">Edit</button>
-          <button type="button" class="mini-btn danger" data-action="trip-delete" data-id="${id}">Delete</button>
+          ${IS_ADMIN ? `<button type="button" class="mini-btn alt" data-action="trip-edit" data-id="${id}">Edit</button>
+          <button type="button" class="mini-btn danger" data-action="trip-delete" data-id="${id}">Delete</button>` : ''}
         </td></tr>`;
     }).join('')}</tbody></table>${moreButton(rows.length, state.tripsLimit, 'trips')}`
     : '<p class="empty-note">No trips match these filters.</p>';
@@ -815,7 +827,8 @@ function openTicketCreate(tripId = '') {
           payment_method: data.payment_method,
           ...(data.payment_info.trim() ? { payment_info: data.payment_info.trim() } : {}),
           booked_by: state.user.id,
-          source: 'Admin',
+          source: IS_ADMIN ? 'Admin' : 'Counter',
+          ...(!IS_ADMIN && state.user.counter ? { counter: state.user.counter } : {}),
           created_at: serverTimestamp(),
         });
         tx.update(tripRef, { available_seats: increment(-1), updated_at: serverTimestamp() });
@@ -931,7 +944,7 @@ function renderBuses() {
   const upcoming = state.trips.filter(t => !hasDeparted(t, now));
   const used = [...new Set(state.trips.filter(t => t.travel_date >= now.date).map(t => t.bus_id).filter(Boolean))];
   const missing = used.filter(id => !state.buses.some(b => b.id === id)).sort();
-  $('#busMissing').innerHTML = missing.length
+  $('#busMissing').innerHTML = IS_ADMIN && missing.length
     ? `<div class="card banner-warn"><p>${missing.map(esc).join(', ')} ${missing.length === 1 ? 'runs trips but is' : 'run trips but are'} not in the bus list.</p>
        <div>${missing.map(id => `<button type="button" class="mini-btn" data-action="bus-add-missing" data-id="${esc(id)}">Add ${esc(id)}</button>`).join('')}</div></div>`
     : '';
@@ -951,10 +964,10 @@ function renderBuses() {
       </dl>
       <p class="section-note">${next ? `Next: ${esc(fmtDayShort(next.travel_date))} ${esc(shortTime(next.departure_time))} · ${esc(routeOf(next))}` : 'No upcoming trips.'}</p>
       ${bus.notes ? `<p class="bus-notes">${esc(bus.notes)}</p>` : ''}
-      <div class="form-actions">
+      ${IS_ADMIN ? `<div class="form-actions">
         <button type="button" class="mini-btn alt" data-action="bus-edit" data-id="${esc(bus.id)}">Edit</button>
         <button type="button" class="mini-btn danger" data-action="bus-delete" data-id="${esc(bus.id)}">Delete</button>
-      </div>
+      </div>` : ''}
     </article>`;
   }).join('') : '<p class="empty-note">No buses yet. Add the fleet with “New bus”.</p>';
 }
@@ -1190,7 +1203,7 @@ const reqTone = { Pending: 'warn', Approved: 'good', Rejected: 'bad', Closed: 'm
 function renderRequests() {
   const q = $('#reqSearch').value.trim().toLowerCase();
   const status = $('#reqStatus').value;
-  const rows = state.requests
+  const rows = myRequests()
     .filter(r => (!status || (r.status || 'Pending') === status) && (!q || `${r.subject} ${r.details} ${r.requested_by}`.toLowerCase().includes(q)))
     .sort((a, b) => (toDate(b.created_at)?.getTime() || 0) - (toDate(a.created_at)?.getTime() || 0));
   $('#reqCount').textContent = plural(rows.length, 'request');
@@ -1204,11 +1217,11 @@ function renderRequests() {
         <td><small>${esc(fmtStamp(r.created_at))}</small></td>
         <td>${pill(s, reqTone[s] || 'muted')}</td>
         <td class="actions-col">
-          ${s === 'Pending' ? `<button type="button" class="mini-btn ok" data-action="req-status" data-status="Approved" data-id="${esc(r.id)}">Approve</button>
+          ${IS_ADMIN && s === 'Pending' ? `<button type="button" class="mini-btn ok" data-action="req-status" data-status="Approved" data-id="${esc(r.id)}">Approve</button>
           <button type="button" class="mini-btn danger" data-action="req-status" data-status="Rejected" data-id="${esc(r.id)}">Reject</button>` : ''}
-          ${s !== 'Closed' ? `<button type="button" class="mini-btn alt" data-action="req-status" data-status="Closed" data-id="${esc(r.id)}">Close</button>` : ''}
-          <button type="button" class="mini-btn alt" data-action="req-edit" data-id="${esc(r.id)}">Edit</button>
-          <button type="button" class="mini-btn danger" data-action="req-delete" data-id="${esc(r.id)}">Delete</button>
+          ${IS_ADMIN && s !== 'Closed' ? `<button type="button" class="mini-btn alt" data-action="req-status" data-status="Closed" data-id="${esc(r.id)}">Close</button>` : ''}
+          ${IS_ADMIN || s === 'Pending' ? `<button type="button" class="mini-btn alt" data-action="req-edit" data-id="${esc(r.id)}">Edit</button>
+          <button type="button" class="mini-btn danger" data-action="req-delete" data-id="${esc(r.id)}">Delete</button>` : '<small>Reviewed by Admin</small>'}
         </td></tr>`;
     }).join('')}</tbody></table>`
     : '<p class="empty-note">No requests match.</p>';
@@ -1221,17 +1234,27 @@ function openRequestForm(id = '') {
     body: `<div class="form-grid">
       ${field('Subject', inputHtml('subject', r?.subject || '', 'required maxlength="200"'), 'full')}
       ${field('Details', `<textarea name="details" required maxlength="4000">${esc(r?.details || '')}</textarea>`, 'full')}
-      ${field('Requested by', inputHtml('requested_by', r?.requested_by || state.user.id, 'required maxlength="40"'))}
-      ${field('Status', selectHtml('status', ['Pending', 'Approved', 'Rejected', 'Closed'], r?.status || 'Pending'))}
+      ${IS_ADMIN ? field('Requested by', inputHtml('requested_by', r?.requested_by || state.user.id, 'required maxlength="40"')) : ''}
+      ${IS_ADMIN ? field('Status', selectHtml('status', ['Pending', 'Approved', 'Rejected', 'Closed'], r?.status || 'Pending')) : ''}
     </div>`,
     onSubmit: async (form, data) => {
-      const payload = { subject: data.subject.trim(), details: data.details.trim(), requested_by: data.requested_by.trim(), status: data.status, updated_at: serverTimestamp() };
+      const payload = {
+        subject: data.subject.trim(), details: data.details.trim(),
+        requested_by: IS_ADMIN ? data.requested_by.trim() : state.user.id,
+        status: IS_ADMIN ? data.status : (r?.status || 'Pending'),
+        updated_at: serverTimestamp(),
+      };
       if (r) {
         await updateDoc(doc(db, 'requests', id), payload);
-        audit('update', 'requests', payload.subject, data.status);
+        audit('update', 'requests', payload.subject, payload.status);
       } else {
-        await setDoc(doc(collection(db, 'requests')), { ...payload, source: 'Admin', created_at: serverTimestamp() });
-        audit('create', 'requests', payload.subject, data.status);
+        await setDoc(doc(collection(db, 'requests')), {
+          ...payload,
+          source: IS_ADMIN ? 'Admin' : 'Counter Manager',
+          ...(!IS_ADMIN && state.user.counter ? { counter: state.user.counter } : {}),
+          created_at: serverTimestamp(),
+        });
+        audit('create', 'requests', payload.subject, IS_ADMIN ? payload.status : 'Sent to Admin');
       }
       toast('Request saved.');
     },
@@ -1259,7 +1282,7 @@ async function deleteRequest(id) {
    ============================================================= */
 function renderNotices() {
   const today = dhakaNow().date;
-  const rows = state.notices.slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.posted_on || '').localeCompare(String(a.posted_on || '')));
+  const rows = state.notices.filter(n => IS_ADMIN || (n.audience !== 'admin' && !(n.expires_on && n.expires_on < today))).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.posted_on || '').localeCompare(String(a.posted_on || '')));
   const audience = { all: 'All staff', cmanager: 'Counter managers', admin: 'Admins only' };
   $('#noticeList').innerHTML = rows.length ? rows.map((n, i) => {
     const expired = n.expires_on && n.expires_on < today;
@@ -1268,10 +1291,10 @@ function renderNotices() {
       <h3>${esc(n.title)}</h3>
       <p>${esc(n.body)}</p>
       <small>${esc(n.posted_by_name || n.posted_by || 'Admin')} · ${esc(fmtDate(n.posted_on))}${n.expires_on ? ` · until ${esc(fmtDate(n.expires_on))}` : ''}</small>
-      <div class="form-actions">
+      ${IS_ADMIN ? `<div class="form-actions">
         <button type="button" class="mini-btn alt" data-action="notice-edit" data-id="${esc(n.id)}">Edit</button>
         <button type="button" class="mini-btn danger" data-action="notice-delete" data-id="${esc(n.id)}">Delete</button>
-      </div>
+      </div>` : ''}
     </article>`;
   }).join('') : '<p class="empty-note">No notices yet. Post one to tell the counters something.</p>';
 }
@@ -1405,7 +1428,7 @@ function bindAccount() {
    Session, idle sign-out, clock
    ============================================================= */
 function saveSession() {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: state.user.id, name: state.user.name, role: 'admin', loggedInAt: Date.now() }));
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: state.user.id, name: state.user.name, role: ROLE, counter: state.user.counter || '', loggedInAt: Date.now() }));
 }
 
 function goToLanding(reason = '') {
@@ -1419,7 +1442,7 @@ function takeHandoff() {
   try {
     const handoff = JSON.parse(sessionStorage.getItem(HANDOFF_KEY) || 'null');
     sessionStorage.removeItem(HANDOFF_KEY);
-    if (!handoff || handoff.role !== 'admin' || !handoff.at || Date.now() - handoff.at > 120000) return null;
+    if (!handoff || handoff.role !== ROLE || !handoff.at || Date.now() - handoff.at > 120000) return null;
     return handoff;
   } catch (error) {
     return null;
@@ -1431,7 +1454,7 @@ async function startSession() {
   if (handoff) {
     let result;
     try {
-      result = await authenticate(handoff.userId, handoff.password, 'admin');
+      result = await authenticate(handoff.userId, handoff.password, ROLE);
     } catch (error) {
       goToLanding('Could not reach the server to check your password. Try again.');
       return;
@@ -1457,20 +1480,22 @@ async function startSession() {
     }
     try {
       const record = await getStaff(session.userId);
-      if (!record || record.active === false || record.role !== 'admin') {
+      if (!record || record.active === false || record.role !== ROLE) {
         localStorage.removeItem(SESSION_KEY);
-        goToLanding('Your admin access has ended. Sign in again.');
+        goToLanding('Your access has ended. Sign in again.');
         return;
       }
       session.name = record.name || session.name;
+      session.counter = record.counter || '';
     } catch (error) {
       /* offline: keep going with the stored session */
     }
-    state.user = { id: session.userId, name: session.name || session.userId, role: 'admin' };
+    state.user = { id: session.userId, name: session.name || session.userId, role: ROLE, counter: session.counter || '' };
     setAuditActor(state.user);
   }
 
   document.body.dataset.roleName = state.user.name;
+  applyRole();
   renderWho();
   $('#loginView').classList.add('hidden');
   $('#appView').classList.remove('hidden');
@@ -1480,8 +1505,17 @@ async function startSession() {
   watchIdle();
 }
 
+/* Counter console: drop admin-only controls and use counter wording. */
+function applyRole() {
+  if (IS_ADMIN) return;
+  $$('[data-admin-only]').forEach(el => { el.hidden = true; });
+  $$('[data-cm-text]').forEach(el => { el.textContent = el.dataset.cmText; });
+  const label = $('#consoleLabel');
+  if (label) label.textContent = state.user.counter ? `${state.user.counter} Counter` : 'Counter Console';
+}
+
 function renderWho() {
-  $('#whoAmI').innerHTML = `<span class="who-avatar">${esc(state.user.name.slice(0, 1).toUpperCase())}</span><span><b>${esc(state.user.name)}</b><small>${esc(state.user.id)} · Admin</small></span>`;
+  $('#whoAmI').innerHTML = `<span class="who-avatar">${esc(state.user.name.slice(0, 1).toUpperCase())}</span><span><b>${esc(state.user.name)}</b><small>${esc(state.user.id)} · ${IS_ADMIN ? 'Admin' : esc(state.user.counter ? `${state.user.counter} counter` : 'Counter Manager')}</small></span>`;
 }
 
 function logout() {

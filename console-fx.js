@@ -1,7 +1,7 @@
 /* =============================================================
    Console effects (Admin and Counter Manager)
 
-   Everything here only watches what admin.js / cmanager.js already
+   Everything here only watches what console-app.js already
    write and dresses it up. None of it changes data, and if this file
    failed to load, the consoles would still work exactly as before.
    ============================================================= */

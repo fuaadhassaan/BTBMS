@@ -2122,3 +2122,8 @@ body::before {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Admin-only parts hidden in the Counter console. */
+[hidden] {
+  display: none !important;
+}
