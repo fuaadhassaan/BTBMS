@@ -17,7 +17,7 @@ import {
 } from './schedule.js';
 import {
   authenticate, getStaff, setAuditActor, audit, passwordFields, checkPassword,
-  generatePassword, normaliseId, ROLE_LABELS, STAFF,
+  generatePassword, normaliseId, ROLE_LABELS, STAFF, COUNTER_LOCATIONS,
 } from './staff.js';
 import {
   collection, doc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot, query, where,
@@ -457,7 +457,7 @@ function renderStats() {
     ['Seats filled', `${cap ? Math.round((100 * tickets.length) / cap) : 0}%`, 'info'],
     ['Average fare', money(tickets.length ? revenue / tickets.length : 0), 'violet'],
     ['Passengers', new Set(tickets.map(b => (b.email || contactOf(b) || b.id).toLowerCase())).size, 'good'],
-  ].map(([label, value, tone]) => `<div class="metric-card"${tone ? ` data-tone="${tone}"` : ''}><span class="label">${label}</span><span class="value">${esc(value)}</span></div>`).join('');
+  ].map(([label, value, tone]) => `<div class="metric-card"${tone ? ` data-tone="${tone}"` : ''}><span class="label">${label}</span><span class="value${String(value).startsWith('BDT') ? ' money' : ''}">${esc(value)}</span></div>`).join('');
 
   // Revenue per travel day
   const days = [];
@@ -727,7 +727,7 @@ const payText = b => {
   const label = { cash: 'Cash', bkash: 'bKash', card: 'Card' }[m] || b.payment_method || '—';
   return b.payment_info && !String(b.payment_info).match(/^\d+$/) ? b.payment_info : label;
 };
-const sourceOf = b => (b.source ? b.source : b.booked_by ? 'Counter' : 'Online');
+const sourceOf = b => (b.counter ? `${b.counter} counter` : b.source ? b.source : b.booked_by ? 'Counter' : 'Online');
 
 function renderTickets() {
   const rows = filteredTickets();
@@ -1010,13 +1010,14 @@ function renderUsers() {
     .sort((a, b) => a.role.localeCompare(b.role) || a.id.localeCompare(b.id));
   $('#userCount').textContent = plural(rows.length, 'user');
   $('#usersTable').innerHTML = rows.length ? `<table class="styled-table"><thead><tr>
-      <th>User ID</th><th>Name</th><th>Role</th><th>Contact</th><th>Status</th><th>Last sign-in</th><th class="actions-col">Actions</th>
+      <th>User ID</th><th>Name</th><th>Role</th><th>Counter</th><th>Contact</th><th>Status</th><th>Last sign-in</th><th class="actions-col">Actions</th>
     </tr></thead><tbody>${rows.map(u => {
       const me = u.id === state.user.id;
       return `<tr>
         <td><b>${esc(u.id)}</b>${me ? ' <span class="pill pill-info">You</span>' : ''}</td>
         <td>${esc(u.name)}</td>
         <td>${pill(ROLE_LABELS[u.role] || u.role, u.role === 'admin' ? 'bad' : 'violet')}</td>
+        <td>${u.role === 'cmanager' ? (u.counter ? esc(u.counter) : '<small>Not set</small>') : '<small>—</small>'}</td>
         <td><small>${esc(u.phone || '—')}<br>${esc(u.email || '')}</small></td>
         <td>${u.active === false ? pill('Off', 'muted') : pill('Active', 'good')}</td>
         <td><small>${esc(fmtStamp(u.last_login_at))}</small></td>
@@ -1039,27 +1040,40 @@ function openUserForm(id = '') {
     body: `<div class="form-grid">
       ${field('User ID', inputHtml('staff_id', u?.id || '', `required maxlength="12" pattern="[A-Za-z0-9]{2,12}" title="2–12 letters or digits" ${u ? 'readonly' : ''}`))}
       ${field('Role', selectHtml('role', [['cmanager', 'Counter Manager'], ['admin', 'Admin']], u?.role || 'cmanager', me ? 'disabled' : ''))}
-      ${field('Full name', inputHtml('name', u?.name || '', 'required maxlength="60"'), 'full')}
+      ${field('Full name', inputHtml('name', u?.name || '', 'required maxlength="60"'))}
+      ${field('Counter location', selectHtml('counter', [['', 'Choose a counter'], ...COUNTER_LOCATIONS.map(c => [c, `${c} counter`])], u?.counter || '', 'id="userCounter"'), 'counter-field')}
       ${field('Phone', inputHtml('phone', u?.phone || '', 'inputmode="tel" maxlength="20"'))}
       ${field('Email', inputHtml('email', u?.email || '', 'type="email" maxlength="80"'))}
       ${u ? '' : field('Starting password', inputHtml('password', suggested, 'required minlength="6" maxlength="64"'), 'full')}
     </div>${u ? '' : '<p class="section-note">Give this password to the person; they can change it under My account.</p>'}`,
     submitLabel: u ? 'Save' : 'Create user',
+    onOpen: form => {
+      // The counter only applies to Counter Managers.
+      const roleSelect = $('[name="role"]', form);
+      const sync = () => {
+        const isCounter = (me ? u.role : roleSelect.value) === 'cmanager';
+        $('.counter-field', form).hidden = !isCounter;
+        $('#userCounter', form).required = isCounter;
+      };
+      roleSelect.addEventListener('change', sync);
+      sync();
+    },
     onSubmit: async (form, data) => {
       const sid = normaliseId(data.staff_id);
       if (!u && state.staff.some(x => x.id === sid)) throw new Error(`${sid} is already taken.`);
       const role = me ? u.role : data.role;
       const record = {
         staff_id: sid, name: data.name.trim(), role, phone: data.phone.trim(), email: data.email.trim(),
+        counter: role === 'cmanager' ? (data.counter || '') : '',
         updated_at: serverTimestamp(),
       };
       if (u) {
         await updateDoc(doc(db, STAFF, sid), record);
-        audit('update', 'staff', sid, `${record.name}, ${ROLE_LABELS[role]}`);
+        audit('update', 'staff', sid, `${record.name}, ${ROLE_LABELS[role]}${record.counter ? `, ${record.counter} counter` : ''}`);
         toast(`${sid} saved.`);
       } else {
         await setDoc(doc(db, STAFF, sid), { ...record, active: true, ...(await passwordFields(data.password)), created_at: serverTimestamp() });
-        audit('create', 'staff', sid, `${record.name}, ${ROLE_LABELS[role]}`);
+        audit('create', 'staff', sid, `${record.name}, ${ROLE_LABELS[role]}${record.counter ? `, ${record.counter} counter` : ''}`);
         toast(`${sid} created. Password: ${data.password}`);
       }
     },
@@ -1177,7 +1191,7 @@ function renderRequests() {
       const s = r.status || 'Pending';
       return `<tr>
         <td><b>${esc(r.subject)}</b><br><small class="clamp">${esc(r.details)}</small></td>
-        <td>${esc(r.requested_by || '—')}<br><small>${esc(r.source || '')}</small></td>
+        <td>${esc(r.requested_by || '—')}<br><small>${esc(r.counter ? `${r.counter} counter` : r.source || '')}</small></td>
         <td><small>${esc(fmtStamp(r.created_at))}</small></td>
         <td>${pill(s, reqTone[s] || 'muted')}</td>
         <td class="actions-col">

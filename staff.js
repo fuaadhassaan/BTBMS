@@ -30,6 +30,9 @@ import {
 export const STAFF = 'staff';
 export const AUDIT = 'audit';
 export const ROLE_LABELS = { admin: 'Admin', cmanager: 'Counter Manager' };
+
+/* Where a Counter Manager's counter is. */
+export const COUNTER_LOCATIONS = ['Dhaka', 'Chittagong', 'Sylhet'];
 const ITERATIONS = 150000;
 
 const FIRST_RUN = {
@@ -103,7 +106,7 @@ export async function authenticate(id, password, role) {
     if (record.role !== role) return { ok: false, reason: `This account cannot open the ${ROLE_LABELS[role] || role} console.` };
     if (!(await checkPassword(record, password))) return { ok: false, reason: 'Wrong User ID or password.' };
     updateDoc(doc(db, STAFF, key), { last_login_at: serverTimestamp() }).catch(() => {});
-    return { ok: true, user: { id: key, name: record.name || key, role: record.role } };
+    return { ok: true, user: { id: key, name: record.name || key, role: record.role, counter: record.counter || '' } };
   }
 
   const first = FIRST_RUN[key];

@@ -43,7 +43,7 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <span class="brand-mark" aria-hidden="true">DT</span>
-        <span class="brand-text"><strong>DTicket</strong><small>Counter Console</small></span>
+        <span class="brand-text"><strong>DTicket</strong><small id="cmCounterLabel">Counter Console</small></span>
       </div>
       <p class="nav-label">Menu</p>
       <button type="button" class="sidebar-link active" data-section="dashboard"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg><span>Dashboard</span></button>
@@ -244,7 +244,7 @@
                   <option value="Sylhet">Sylhet</option>
                 </select>
               </div>
-              <div class="full">
+              <div>
                 <label for="ticketCreatePayment">Payment Method</label>
                 <select id="ticketCreatePayment" name="payment_method" required>
                   <option value="">Select</option>
@@ -315,7 +315,7 @@
                   <option value="Sylhet">Sylhet</option>
                 </select>
               </div>
-              <div class="full">
+              <div>
                 <label for="ticketUpdatePayment">Payment Method</label>
                 <select id="ticketUpdatePayment" name="payment_method" required>
                   <option value="Cash">Cash</option>

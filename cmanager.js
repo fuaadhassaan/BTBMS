@@ -1,6 +1,6 @@
 import { db } from './firebase-init.js';
 import { HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
-import { ensureSchedule } from './schedule.js';
+import { ensureSchedule, dhakaNow, shortTime } from './schedule.js';
 import { authenticate, getStaff, setAuditActor, audit } from './staff.js';
 import {
   collection,
@@ -197,8 +197,8 @@ function renderDashboard() {
         <td>${escapeHtml(trip.trip_id)}</td>
         <td>${escapeHtml(trip.origin)}</td>
         <td>${escapeHtml(trip.destination)}</td>
-        <td>${escapeHtml(trip.departure_time)}</td>
-        <td>${escapeHtml(trip.arrival_time)}</td>
+        <td>${escapeHtml(shortTime(trip.departure_time))}</td>
+        <td>${escapeHtml(shortTime(trip.arrival_time))}</td>
         <td>${escapeHtml(trip.bus_id)}</td>
         <td>${escapeHtml(trip.travel_date)}</td>
         <td>${escapeHtml(status)}</td>
@@ -229,14 +229,19 @@ function renderTripsTable() {
     bookedByTrip.set(booking.trip_id, (bookedByTrip.get(booking.trip_id) || 0) + 1);
   }
 
-  const rows = state.trips.map(trip => `
+  const today = dhakaNow().date;
+  const upcoming = state.trips
+    .filter(trip => String(trip.travel_date || '') >= today)
+    .sort((a, b) => String(a.travel_date).localeCompare(String(b.travel_date)) || String(a.departure_time).localeCompare(String(b.departure_time)));
+
+  const rows = upcoming.map(trip => `
     <tr>
       <td>${escapeHtml(trip.trip_id)}</td>
       <td>${escapeHtml(trip.bus_id)}</td>
       <td>${escapeHtml(trip.origin)}</td>
       <td>${escapeHtml(trip.destination)}</td>
-      <td>${escapeHtml(trip.departure_time)}</td>
-      <td>${escapeHtml(trip.arrival_time)}</td>
+      <td>${escapeHtml(shortTime(trip.departure_time))}</td>
+      <td>${escapeHtml(shortTime(trip.arrival_time))}</td>
       <td>${escapeHtml(trip.travel_date)}</td>
       <td>${escapeHtml(trip.fare)}</td>
       <td>${escapeHtml(bookedByTrip.get(trip.trip_id) || 0)}</td>
@@ -273,7 +278,7 @@ function handleTripSearch(event) {
   resultEl.innerHTML = `
     <div class="summary-item"><span class="k">Trip ID</span><span class="v">${escapeHtml(trip.trip_id)}</span></div>
     <div class="summary-item"><span class="k">Route</span><span class="v">${escapeHtml(trip.origin)} &rarr; ${escapeHtml(trip.destination)}</span></div>
-    <div class="summary-item"><span class="k">Departure / Arrival</span><span class="v">${escapeHtml(trip.departure_time)} - ${escapeHtml(trip.arrival_time)}</span></div>
+    <div class="summary-item"><span class="k">Departure / Arrival</span><span class="v">${escapeHtml(shortTime(trip.departure_time))} - ${escapeHtml(shortTime(trip.arrival_time))}</span></div>
     <div class="summary-item"><span class="k">Booked Seats</span><span class="v">${booked}</span></div>
     <div class="summary-item"><span class="k">Available Seats</span><span class="v">${remaining}</span></div>
     <div class="summary-item"><span class="k">Fare</span><span class="v">${formatMoney(trip.fare)}</span></div>
@@ -389,6 +394,7 @@ async function handleTicketCreate(event) {
         dropping_point: String(form.get('dropping_point') || '').trim(),
         payment_method: String(form.get('payment_method') || '').trim(),
         booked_by: state.loggedInUserId || CM_USER,
+        ...(state.counter ? { counter: state.counter } : {}),
         booking_time: serverTimestamp(),
       });
       transaction.update(tripRef, {
@@ -477,7 +483,7 @@ function renderRequestsTable() {
       <td>${index + 1}</td>
       <td>${escapeHtml(request.subject)}</td>
       <td>${escapeHtml(request.requested_by)}</td>
-      <td>${escapeHtml(request.status)}</td>
+      <td><span class="pill pill-${({ Pending: 'warn', Approved: 'good', Rejected: 'bad', Closed: 'muted' })[request.status] || 'muted'}">${escapeHtml(request.status || 'Pending')}</span></td>
       <td>${escapeHtml(request.details)}</td>
     </tr>
   `).join('');
@@ -507,6 +513,7 @@ async function handleRequestCreate(event) {
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
       source: 'Counter Manager',
+      ...(state.counter ? { counter: state.counter } : {}),
     });
     setMessage('requestCreateMsg', 'Request sent to Admin!', 'success');
     audit('create', 'requests', String(form.get('subject') || ''), 'Request sent to Admin');
@@ -659,7 +666,10 @@ async function startSession() {
       showLogin('Your account has been switched off. Ask an admin.');
       return;
     }
-    if (record) session.name = record.name || session.name;
+    if (record) {
+      session.name = record.name || session.name;
+      session.counter = record.counter || '';
+    }
   } catch (error) {
     /* offline: carry on with the session we have */
   }
@@ -667,7 +677,10 @@ async function startSession() {
   state.loggedInUserId = session.userId;
   setAuditActor({ id: session.userId, name: session.name || session.userId, role: 'cmanager' });
   document.getElementById('requestCreateRequestedBy').value = state.loggedInUserId;
+  state.counter = session.counter || '';
   document.body.dataset.roleName = session.name || 'Counter Manager';
+  const counterLabel = document.getElementById('cmCounterLabel');
+  if (counterLabel) counterLabel.textContent = state.counter ? `${state.counter} Counter` : 'Counter Console';
   showApp();
   setActiveSection('dashboard');
   watchNotices();
