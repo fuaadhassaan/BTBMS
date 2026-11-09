@@ -33,6 +33,8 @@ body::before {
 }
 .main-section {
   flex: 1;
+  position: relative; /* above the darkening overlay in body::before */
+  z-index: 1;
   background-color: transparent;
   padding: 30px;
   overflow-y: auto;

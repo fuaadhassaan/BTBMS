@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="DTicket">
+  <defs>
+    <linearGradient id="dt-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5a8cff"/>
+      <stop offset="1" stop-color="#2541b8"/>
+    </linearGradient>
+    <linearGradient id="dt-shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#dt-bg)"/>
+  <rect width="64" height="64" rx="15" fill="url(#dt-shine)"/>
+  <!-- "DT", drawn as shapes so it looks the same on every device. -->
+  <g fill="#fff">
+    <path fill-rule="evenodd" d="M12 19h9.5a13 13 0 0 1 0 26H12zm5.6 5.2v15.6h3.9a7.8 7.8 0 0 0 0-15.6z"/>
+    <path d="M35 19h18v5.4h-6.2V45h-5.6V24.4H35z"/>
+  </g>
+</svg>

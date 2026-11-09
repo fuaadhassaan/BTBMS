@@ -4,7 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DTicket - Passenger Booking</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%8C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="favicon.ico" sizes="32x32" />
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#2f55d4" />
   <link rel="stylesheet" href="site.css">
   <style>
     :root {
@@ -309,9 +313,65 @@
       display: none;
     }
 
-    .receipt-card h3 {
-      margin: 0 0 10px;
-      font-size: 18px;
+    /* ---- the DTicket brand band across the top of the ticket ---- */
+    .ticket-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: -16px -16px 14px;
+      padding: 14px 16px;
+      border-radius: 16px 16px 0 0;
+      background: linear-gradient(135deg, #1d3fa8, #2f55d4 55%, #5a8cff);
+      color: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .ticket-head img {
+      display: block;
+      flex: none;
+      border-radius: 11px;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+    }
+
+    .ticket-brand {
+      display: grid;
+      gap: 2px;
+      line-height: 1.15;
+    }
+
+    .ticket-brand strong {
+      font-size: 19px;
+      letter-spacing: -0.01em;
+    }
+
+    .ticket-brand small {
+      font-size: 11.5px;
+      opacity: 0.85;
+    }
+
+    .ticket-tag {
+      margin-left: auto;
+      padding: 5px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .ticket-foot {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 6px 12px;
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 2px dashed rgba(255, 255, 255, 0.16);
+      color: #aab4c3;
+      font-size: 12px;
     }
 
     .receipt-grid {
@@ -344,6 +404,11 @@
         margin: 0;
       }
       .receipt-card * { color: #000 !important; }
+      /* The brand band keeps its blue and white lettering on paper. */
+      .receipt-card .ticket-head,
+      .receipt-card .ticket-head * { color: #fff !important; }
+      .receipt-card .ticket-head { border-radius: 0; margin: -16px -16px 14px; }
+      .receipt-card .ticket-foot { border-top-color: #999; }
     }
 
     .error {
@@ -367,6 +432,7 @@
 <body>
   <div class="topbar">
     <div class="topbar-left">
+      <a href="index.html" class="dt-logo" aria-label="DTicket home"><img src="logo.svg" width="38" height="38" alt="" /><span>DTicket</span></a>
       <a href="index.html" class="home-btn">Home</a>
         <a href="ticket-booking.html" class="home-btn search-btn">Search</a>
       <button type="button" id="refreshBtn" class="refresh-btn">Refresh</button>
@@ -389,8 +455,19 @@
       </div>
       <p class="count-line">Selected seats: <span id="selCount">0</span>/4</p>
       <div id="receiptCard" class="receipt-card" aria-live="polite">
-        <h3>Your Ticket Receipt</h3>
+        <div class="ticket-head">
+          <img src="logo.svg" width="44" height="44" alt="DTicket" />
+          <div class="ticket-brand">
+            <strong>DTicket</strong>
+            <small>The all-in-one Ticketing Website</small>
+          </div>
+          <span class="ticket-tag">E-Ticket</span>
+        </div>
         <div id="receiptBody" class="receipt-grid"></div>
+        <p class="ticket-foot">
+          <span>Please show this ticket when boarding.</span>
+          <span id="ticketIssued"></span>
+        </p>
         <button id="printBtn" type="button" class="print-btn" style="margin-top:14px;">Print PDF</button>
       </div>
     </section>
@@ -589,6 +666,9 @@
         <div class="receipt-row"><strong>Contact</strong><span>${receipt.contact}</span></div>
         <div class="receipt-row"><strong>Payment</strong><span>${receipt.paymentMethod}</span></div>
       `;
+      document.getElementById('ticketIssued').textContent = `Issued ${new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date())} (Dhaka)`;
       receiptCard.style.display = 'block';
       printBtn.style.display = 'inline-flex';
     }
