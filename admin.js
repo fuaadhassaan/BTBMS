@@ -1,5 +1,6 @@
 import { db } from './firebase-init.js';
 import { HANDOFF_KEY, SIGNIN_ERROR_KEY } from './accounts.js';
+import { ensureSchedule } from './schedule.js';
 import {
   collection,
   doc,
@@ -780,6 +781,8 @@ function renderAll() {
 }
 
 function bootstrap() {
+  // Keep the next two weeks of trips in place (one read when up to date).
+  ensureSchedule(db);
   bindLogin();
   bindNav();
   bindForms();

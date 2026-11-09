@@ -80,6 +80,7 @@
           <div class="field">
             <label for="travel_date">Travel date</label>
             <input type="date" id="travel_date" name="travel_date" required />
+            <small class="field-hint">Tickets are on sale for today and the next 13 days.</small>
           </div>
           <button class="btn" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg> Search Trips</button>
         </div>
@@ -102,15 +103,29 @@
   </main>
 
   <script src="public.js"></script>
-  <script>
+  <script type="module">
+    import { db } from './firebase-init.js';
+    import { bookingWindow, ensureSchedule, BOOKING_WINDOW_DAYS } from './schedule.js';
+
     const fromEl = document.getElementById('from');
     const toEl = document.getElementById('to');
     const dateEl = document.getElementById('travel_date');
 
-    // Today's date in Dhaka is the earliest bookable day.
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
-    dateEl.min = today;
-    if (!dateEl.value) dateEl.value = today;
+    // Tickets are on sale from today to 13 days ahead, in Dhaka time.
+    // The limits follow the clock: at midnight today drops off and a
+    // new day opens, even if the page was left open.
+    function applyWindow() {
+      const { first, last } = bookingWindow();
+      dateEl.min = first;
+      dateEl.max = last;
+      if (!dateEl.value || dateEl.value < first || dateEl.value > last) dateEl.value = first;
+      dateEl.title = `Tickets are on sale for the next ${BOOKING_WINDOW_DAYS} days`;
+    }
+    applyWindow();
+    setInterval(applyWindow, 30000);
+
+    // Make sure the next two weeks of trips exist (usually one read).
+    ensureSchedule(db);
 
     // Results are filtered on the next page (Vercel cannot run the old PHP search).
     document.getElementById('searchForm').addEventListener('submit', event => {

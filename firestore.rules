@@ -1,0 +1,89 @@
+rules_version = '2';
+
+// DTicket Firestore rules.
+//
+// The site has no Firebase Authentication yet: passengers book without
+// signing in, and the Admin / Counter Manager consoles check their
+// passwords in the browser. So these rules cannot tell an admin from a
+// visitor. What they do instead is keep every write well-formed and
+// limit it to the collections and shapes the app actually uses, and
+// deny everything else.
+//
+// To lock writes to staff, the consoles need a real sign-in (Firebase
+// Auth); then the trip/booking/request writes below can require
+// request.auth with a staff claim.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function shortText(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function validTrip(d) {
+      return shortText(d.trip_id, 40)
+        && shortText(d.origin, 40)
+        && shortText(d.destination, 40)
+        && isDate(d.travel_date)
+        && shortText(d.departure_time, 8)
+        && shortText(d.arrival_time, 8)
+        && d.fare is number && d.fare >= 0 && d.fare <= 100000
+        && d.available_seats is number && d.available_seats >= 0 && d.available_seats <= 60
+        && d.size() <= 20;
+    }
+
+    // ---- trips: public timetable ----
+    match /trips/{tripId} {
+      allow read: if true;
+      allow create: if validTrip(request.resource.data) && request.resource.data.trip_id == tripId;
+      allow update: if validTrip(request.resource.data) && request.resource.data.trip_id == resource.data.trip_id;
+      allow delete: if true;
+    }
+
+    // ---- bookings: one document per seat, id "<trip>_<seat>" ----
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow create: if shortText(request.resource.data.trip_id, 40)
+        && shortText(request.resource.data.seat_label, 4)
+        && bookingId == request.resource.data.trip_id + '_' + request.resource.data.seat_label
+        && exists(/databases/$(database)/documents/trips/$(request.resource.data.trip_id))
+        && request.resource.data.size() <= 20;
+      allow update: if request.resource.data.trip_id == resource.data.trip_id
+        && request.resource.data.seat_label == resource.data.seat_label
+        && request.resource.data.size() <= 20;
+      allow delete: if true;
+    }
+
+    // ---- requests between counter managers and admin ----
+    match /requests/{requestId} {
+      allow read: if true;
+      allow create, update: if shortText(request.resource.data.subject, 200)
+        && shortText(request.resource.data.details, 4000)
+        && request.resource.data.size() <= 15;
+      allow delete: if true;
+    }
+
+    // ---- buses: reference data, changed from the Firebase console only ----
+    match /buses/{busId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ---- schedule/window: how far ahead trips have been generated ----
+    match /schedule/{docId} {
+      allow read: if true;
+      allow write: if docId == 'window'
+        && isDate(request.resource.data.generated_through)
+        && request.resource.data.keys().hasOnly(['generated_through', 'updated_at']);
+    }
+
+    // Anything else: no access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

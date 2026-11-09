@@ -146,6 +146,7 @@
       runTransaction,
       serverTimestamp,
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { hasDeparted, inWindow, bookingWindow, shortTime, BOOKING_WINDOW_DAYS } from './schedule.js';
 
     const tripId = new URLSearchParams(window.location.search).get('trip_id') || 'TR1';
     const seatsContainer = document.getElementById('seats');
@@ -166,6 +167,9 @@
     let tripDocData = null;
     let bookingsUnsub = null;
     let lastBookingReceipt = null;
+    // Why this trip cannot be booked ('' while it can): it has left,
+    // it is outside the two-week window, or it does not exist.
+    let tripClosed = '';
     const totalSeats = 28;
 
     tripMeta.textContent = `Trip ${tripId}`;
@@ -221,10 +225,10 @@
         button.classList.toggle('selected', selectedSeats.includes(label));
         button.classList.toggle('booked', bookedSeats.has(label));
         const unselectable = bookedSeats.has(label) || (selectedSeats.length >= maxSeats && !selectedSeats.includes(label));
-        button.disabled = bookedSeats.has(label) || unselectable;
+        button.disabled = bookedSeats.has(label) || unselectable || Boolean(tripClosed);
       }
       selCount.textContent = String(selectedSeats.length);
-      submitBtn.disabled = selectedSeats.length === 0;
+      submitBtn.disabled = selectedSeats.length === 0 || Boolean(tripClosed);
       updateTotalCostDisplay();
     }
 
@@ -280,7 +284,7 @@
       receiptBody.innerHTML = `
         <div class="receipt-row"><strong>Trip ID</strong><span>${escapeHtml(receipt.tripId)}</span></div>
         <div class="receipt-row"><strong>Route</strong><span>${escapeHtml(receipt.route)}</span></div>
-        <div class="receipt-row"><strong>Bus Time</strong><span>${escapeHtml(receipt.busTime)}</span></div>
+        <div class="receipt-row"><strong>Departure</strong><span>${escapeHtml(receipt.busTime)}</span></div>
         <div class="receipt-row"><strong>Price</strong><span>${escapeHtml(receipt.pricePerTicket)}</span></div>
         <div class="receipt-row"><strong>Total Price</strong><span>${escapeHtml(receipt.totalPrice)}</span></div>
         <div class="receipt-row"><strong>Total Seats</strong><span>${escapeHtml(receipt.totalSeats)}</span></div>
@@ -314,6 +318,21 @@
       window.setInterval(tick, 1000);
     }
 
+    function renderTripMeta() {
+      if (!tripDocData) return;
+      const t = tripDocData;
+      tripMeta.textContent = `Trip ${tripId} · ${t.origin || 'Unknown'} to ${t.destination || 'Unknown'} · ${t.travel_date || ''} ${shortTime(t.departure_time)} · Seats left: ${t.available_seats ?? 0}`;
+    }
+
+    function closeTrip(reason) {
+      if (tripClosed === reason) return;
+      tripClosed = reason;
+      selectedSeats.length = 0;
+      renderPassengerFields();
+      syncSeatStyles();
+      setStatus(reason, true);
+    }
+
     async function loadTripMeta() {
       try {
         const tripRef = doc(db, 'trips', tripId);
@@ -322,10 +341,15 @@
           tripDocData = snap.data();
           const available = Number(tripDocData.available_seats ?? 0);
           totalAvailableSeats = available;
-          const origin = tripDocData.origin || 'Unknown';
-          const destination = tripDocData.destination || 'Unknown';
-          tripMeta.textContent = `Trip ${tripId} · ${origin} to ${destination} · Seats left: ${available}`;
+          renderTripMeta();
           updateTotalCostDisplay();
+          if (hasDeparted(tripDocData)) {
+            closeTrip('This bus has already departed. Please choose another trip.');
+          } else if (!inWindow(tripDocData.travel_date, bookingWindow())) {
+            closeTrip(`Tickets are sold for today and the next ${BOOKING_WINDOW_DAYS - 1} days only.`);
+          }
+        } else {
+          closeTrip('This trip could not be found. Please search again.');
         }
       } catch (error) {
         console.error('Trip load failed', error);
@@ -340,16 +364,18 @@
           const data = docSnap.data();
           if (data && data.seat_label) bookedSeats.add(data.seat_label);
         });
+        let lostSeat = false;
         for (let i = selectedSeats.length - 1; i >= 0; i -= 1) {
           if (bookedSeats.has(selectedSeats[i])) {
             selectedSeats.splice(i, 1);
+            lostSeat = true;
           }
         }
-        renderPassengerFields();
+        // Rebuild the name fields only when one of our seats was taken,
+        // so names already typed are not wiped by someone else's booking.
+        if (lostSeat) renderPassengerFields();
         syncSeatStyles();
-        if (tripDocData) {
-          tripMeta.textContent = `Trip ${tripId} · ${tripDocData.origin || 'Unknown'} to ${tripDocData.destination || 'Unknown'} · Seats left: ${tripDocData.available_seats ?? 0}`;
-        }
+        renderTripMeta();
       }, error => {
         console.error('Booking listener failed', error);
         setStatus('Live updates could not be loaded. Refresh to retry.', true);
@@ -405,6 +431,13 @@
 
     async function submitBooking(event) {
       event.preventDefault();
+      // Checked again at the moment of booking: the bus may have left
+      // while the form was being filled in.
+      await loadTripMeta();
+      if (tripClosed) {
+        setStatus(tripClosed, true);
+        return;
+      }
       if (selectedSeats.length === 0) {
         setStatus('Select at least one seat first.', true);
         return;
@@ -444,7 +477,7 @@
         lastBookingReceipt = {
           tripId,
           route: `${tripDocData?.origin || 'Unknown'} to ${tripDocData?.destination || 'Unknown'}`,
-          busTime: tripDocData?.departure_time || 'Unknown',
+          busTime: `${tripDocData?.travel_date || ''} · ${shortTime(tripDocData?.departure_time) || 'Unknown'}`,
           pricePerTicket: `BDT ${Number(tripDocData?.fare || 0).toFixed(2)}`,
           totalPrice: `BDT ${(Number(tripDocData?.fare || 0) * selectedLabels.length).toFixed(2)}`,
           totalSeats: selectedLabels.length,

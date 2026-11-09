@@ -549,9 +549,14 @@ a {
 .search-bottom {
   display: grid;
   grid-template-columns: 1fr auto;
-  align-items: end;
+  align-items: start;
   gap: 12px;
   margin-top: 16px;
+}
+
+/* Level with the date box, under its label. */
+.search-bottom > .btn {
+  margin-top: calc(0.76rem * 1.35 + 7px);
 }
 
 .search-bottom .btn {
@@ -1317,4 +1322,20 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---- small helper line under a field ---- */
+.field-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* A trip that can no longer be booked (departed or sold out). */
+.trip-card.is-closed {
+  opacity: 0.6;
+}
+
+.trip-card.is-closed:hover {
+  transform: none;
+  border-color: var(--line);
 }

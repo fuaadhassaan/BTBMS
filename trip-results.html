@@ -65,7 +65,8 @@
   <script src="public.js"></script>
   <script type="module">
     import { db } from './firebase-init.js';
-    import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { collection, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { bookingWindow, inWindow, hasDeparted, dhakaNow, shortTime, ensureSchedule, BOOKING_WINDOW_DAYS } from './schedule.js';
 
     const params = new URLSearchParams(window.location.search);
     const from = (params.get('from') || '').toLowerCase();
@@ -93,11 +94,12 @@
       chip.hidden = false;
     }
 
+    // Only the booking window is on sale; anything else is filtered out.
     function matchesSearch(trip) {
       const okFrom = !from || (trip.origin || '').toLowerCase() === from;
       const okTo = !to || (trip.destination || '').toLowerCase() === to;
       const okDate = !date || (trip.travel_date || '') === date;
-      return okFrom && okTo && okDate;
+      return okFrom && okTo && okDate && inWindow(trip.travel_date, bookingWindow());
     }
 
     function emptyState(title, text) {
@@ -116,16 +118,19 @@
         return;
       }
 
+      const now = dhakaNow();
       container.innerHTML = trips.map((t, i) => {
         const seats = Number(t.available_seats || 0);
-        const seatClass = seats === 0 ? 'seats-none' : seats <= 5 ? 'seats-low' : 'seats-ok';
-        const seatText = seats === 0 ? 'Sold out' : `${seats} seat${seats === 1 ? '' : 's'} left`;
+        const departed = hasDeparted(t, now);
+        const closed = departed || seats === 0;
+        const seatClass = departed || seats === 0 ? 'seats-none' : seats <= 5 ? 'seats-low' : 'seats-ok';
+        const seatText = departed ? 'Departed' : seats === 0 ? 'Sold out' : `${seats} seat${seats === 1 ? '' : 's'} left`;
         return `
-          <article class="glass trip-card" style="--i: ${i}">
+          <article class="glass trip-card${closed ? ' is-closed' : ''}" style="--i: ${i}">
             <div class="trip-times">
-              <div><strong>${escapeHtml(t.departure_time)}</strong><span>${escapeHtml(t.origin)}</span></div>
+              <div><strong>${escapeHtml(shortTime(t.departure_time))}</strong><span>${escapeHtml(t.origin)}</span></div>
               <div class="trip-line">${busIcon}</div>
-              <div class="end"><strong>${escapeHtml(t.arrival_time)}</strong><span>${escapeHtml(t.destination)}</span></div>
+              <div class="end"><strong>${escapeHtml(shortTime(t.arrival_time))}</strong><span>${escapeHtml(t.destination)}</span></div>
             </div>
             <div class="trip-meta">
               <span class="tag">Trip ${escapeHtml(t.trip_id)}</span>
@@ -135,7 +140,7 @@
             </div>
             <div class="trip-buy">
               <div class="fare"><small>Fare</small><strong>BDT ${Number(t.fare || 0).toFixed(2)}</strong></div>
-              <button class="btn" type="button" ${seats === 0 ? 'disabled' : ''} data-trip="${escapeHtml(t.trip_id)}">Select seats ${arrowIcon}</button>
+              <button class="btn" type="button" ${closed ? 'disabled' : ''} data-trip="${escapeHtml(t.trip_id)}">Select seats ${arrowIcon}</button>
             </div>
           </article>`;
       }).join('');
@@ -150,18 +155,41 @@
       if (button && !button.disabled) window.selectTrip(button.dataset.trip);
     });
 
-    onSnapshot(collection(db, 'trips'), snapshot => {
-      const trips = [];
-      snapshot.forEach(docSnap => {
-        const trip = docSnap.data();
-        if (matchesSearch(trip)) trips.push(trip);
+    const windowNow = bookingWindow();
+    if (date && !inWindow(date, windowNow)) {
+      // A date before today, or more than two weeks out.
+      emptyState(
+        date < windowNow.first ? 'That date has passed' : 'Not on sale yet',
+        `Tickets are sold for today and the next ${BOOKING_WINDOW_DAYS - 1} days only.`
+      );
+    } else {
+      // Make sure the window's trips exist, then listen to just the
+      // searched date (or the whole window when no date was given).
+      ensureSchedule(db);
+      const tripsQuery = date
+        ? query(collection(db, 'trips'), where('travel_date', '==', date))
+        : query(collection(db, 'trips'), where('travel_date', '>=', windowNow.first), where('travel_date', '<=', windowNow.last));
+
+      let latest = null;
+      onSnapshot(tripsQuery, snapshot => {
+        const trips = [];
+        snapshot.forEach(docSnap => {
+          const trip = docSnap.data();
+          if (matchesSearch(trip)) trips.push(trip);
+        });
+        trips.sort((a, b) => String(a.travel_date).localeCompare(String(b.travel_date))
+          || String(a.departure_time).localeCompare(String(b.departure_time))
+          || String(a.trip_id).localeCompare(String(b.trip_id)));
+        latest = trips;
+        renderTrips(trips);
+      }, error => {
+        console.error(error);
+        emptyState('Trips could not be loaded', 'Please check your connection and try again in a moment.');
       });
-      trips.sort((a, b) => String(a.departure_time).localeCompare(String(b.departure_time)) || String(a.trip_id).localeCompare(String(b.trip_id)));
-      renderTrips(trips);
-    }, error => {
-      console.error(error);
-      emptyState('Trips could not be loaded', 'Please check your connection and try again in a moment.');
-    });
+
+      // A bus that leaves while the page is open turns to "Departed".
+      setInterval(() => { if (latest) renderTrips(latest.filter(matchesSearch)); }, 60000);
+    }
   </script>
 </body>
 </html>
