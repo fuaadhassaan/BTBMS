@@ -765,8 +765,7 @@ html {
 }
 
 /* ---------------------------------------------------------------
-   DTicket additions: the passenger's way in, and the line between it
-   and the staff sign-in.
+   DTicket additions: the passenger's way in.
    --------------------------------------------------------------- */
 .btn-book {
   display: inline-block;
@@ -781,22 +780,173 @@ html {
   outline-offset: 3px;
 }
 
-.divider {
+/* ---------------------------------------------------------------
+   The top bar: brand on the left; clock, theme and the one Log In
+   button on the right. Fixed, so Log In is always one click away.
+   --------------------------------------------------------------- */
+.topbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 20;
   display: flex;
   align-items: center;
-  gap: 14px;
-  width: min(420px, 100%);
-  margin: 56px auto 40px;
-  color: var(--text-3);
-  font-size: 0.78rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  transition: background-color 0.3s ease, border-color 0.3s ease, padding 0.3s ease;
+  border-bottom: 1px solid transparent;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--raise-line);
+.topbar.is-scrolled {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: color-mix(in srgb, var(--ink-1) 72%, transparent);
+  border-bottom-color: var(--raise-line-soft);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.topbar .brand {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5a8cff, #2541b8);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.15rem;
+  box-shadow: 0 8px 22px rgba(64, 110, 255, 0.35);
+}
+
+.btn-top-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid rgba(90, 140, 255, 0.8);
+  border-radius: 999px;
+  background: var(--button-fill);
+  color: var(--on-fill);
+  font: 600 0.92rem/1 inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-top-login:hover {
+  transform: translateY(-1px);
+  background: rgba(64, 124, 255, 0.98);
+  box-shadow: 0 10px 26px rgba(34, 85, 190, 0.35);
+}
+
+.btn-top-login:focus-visible,
+.dialog-close:focus-visible {
+  outline: 2px solid #5a8cff;
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------
+   The sign-in window
+   --------------------------------------------------------------- */
+.login-dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--raise-line);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--ink-1) 92%, #5a8cff 4%);
+  color: var(--text);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  overflow: auto;
+}
+
+.login-dialog::backdrop {
+  background: rgba(2, 4, 10, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.login-dialog[open] {
+  animation: dialog-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.login-dialog[open]::backdrop {
+  animation: fade-in 0.3s ease both;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.login-card {
+  position: relative;
+  padding: 30px 28px 22px;
+  text-align: center;
+}
+
+.login-card h2 {
+  margin: 14px 0 8px;
+  font-size: 1.6rem;
+}
+
+.login-card .access-note {
+  margin-bottom: 22px;
+}
+
+.login-card .login-form {
+  width: 100%;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--raise-line);
+  border-radius: 10px;
+  background: var(--raise);
+  color: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dialog-close:hover {
+  border-color: rgba(90, 140, 255, 0.55);
+}
+
+@media (max-width: 640px) {
+  .topbar .brand-subtitle,
+  .topbar .clock {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-dialog[open],
+  .login-dialog[open]::backdrop {
+    animation: none;
+  }
 }

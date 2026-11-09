@@ -125,6 +125,28 @@ function lookUp() {
   setStatus('');
 }
 
+/* ---- the one Log In button and its window ---- */
+const dialog = $('#login-dialog');
+
+function openLogin() {
+  if (!dialog.open) dialog.showModal();
+  idField.focus();
+}
+
+$('#open-login').addEventListener('click', openLogin);
+$('#close-login').addEventListener('click', () => dialog.close());
+
+/* A click on the dimmed backdrop (outside the card) closes it too. */
+dialog.addEventListener('click', event => {
+  if (event.target === dialog) dialog.close();
+});
+
+/* The top bar picks up a glass background once the page has moved. */
+const topbar = $('.topbar');
+const markScrolled = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
+window.addEventListener('scroll', markScrolled, { passive: true });
+markScrolled();
+
 /* A refused sign-in comes back here with the reason. Read once, cleared. */
 (() => {
   let reason = '';
@@ -135,9 +157,8 @@ function lookUp() {
     /* nothing to show */
   }
   if (reason) {
+    openLogin();
     setStatus(reason, 'error');
-    document.getElementById('access').scrollIntoView();
-    idField.focus();
   }
 })();
 

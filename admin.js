@@ -124,7 +124,7 @@ function showLogin(reason) {
   } catch (error) {
     /* nothing to pass on */
   }
-  window.location.replace('index.html#access');
+  window.location.replace('index.html');
 }
 
 // The sign-in handed over by the landing page, read once and cleared.
