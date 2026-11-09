@@ -229,7 +229,8 @@ body::before {
   background: var(--accent-grad);
   color: #fff;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
+  letter-spacing: -0.03em;
   box-shadow: 0 8px 24px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 

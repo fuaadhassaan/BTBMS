@@ -821,7 +821,8 @@ html {
   background: linear-gradient(135deg, #5a8cff, #2541b8);
   color: #fff;
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 0.98rem;
+  letter-spacing: -0.03em;
   box-shadow: 0 8px 22px rgba(64, 110, 255, 0.35);
 }
 
