@@ -5,8 +5,8 @@
    rule rather than two. Passengers never sign in, so they are not here. */
 
 export const ROLES = {
-  admin: { label: 'Admin', accent: '#5a8cff', text: '#cfe0ff', page: 'admin.html' },
-  cmanager: { label: 'Counter Manager', accent: '#47d59b', text: '#c9f5e2', page: 'cmanager.html' }
+  admin: { label: 'Admin', accent: '#ff4d4d', text: '#ffd6d6', page: 'admin.html' },
+  cmanager: { label: 'Counter Manager', accent: '#ff4d4d', text: '#ffd6d6', page: 'cmanager.html' }
 };
 
 export const ACCOUNTS = {

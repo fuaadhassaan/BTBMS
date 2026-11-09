@@ -214,5 +214,5 @@ form.addEventListener('submit', event => {
 
 /* Warm up the Firebase connection so the consoles open faster. */
 import('./firebase-init.js').catch(error => {
-  console.warn('[BTBMS] firebase-init.js could not be preloaded.', error);
+  console.warn('[DTicket] firebase-init.js could not be preloaded.', error);
 });

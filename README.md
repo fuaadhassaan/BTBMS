@@ -1,10 +1,10 @@
-# BTBMS | Bus Ticket Booking and Management System
-BTBMS – A complete Bus Ticket Booking &amp; Management System | Real-time seat booking, role-based dashboards (Admin, Counter Manager), and insightful analytics – all in one platform.
+# DTicket — The all-in-one Ticketing Website
+DTicket – The all-in-one Ticketing Website. Real-time seat booking, role-based dashboards (Admin, Counter Manager), and insightful analytics – all in one platform.
 
 📌 Changelog
 **Version 1.0 – Initial Release**
 
-🎉 First stable release of BTBMS (Bus Ticket Booking & Management System)
+🎉 First stable release of DTicket (The all-in-one Ticketing Website)
 
 **👤 Passenger's Ticket Booking:**
 

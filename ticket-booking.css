@@ -28,7 +28,7 @@ body::before {
 .nav-panel {
   width: 250px;
   background-color: black;
-  border-right: 2px solid red;
+  border-right: 2px solid #2563eb;
   padding: 20px;
 }
 .main-section {
@@ -109,7 +109,7 @@ body::before {
 .search-form button,
 .search-form form button {
   padding: 10px;
-  background: red;
+  background: #2563eb;
   color: white;
   border: none;
   font-weight: bold;
@@ -119,7 +119,7 @@ body::before {
 .home-btn {
   display: inline-block;
   padding: 10px 20px;
-  background: red;
+  background: #2563eb;
   color: white;
   font-weight: bold;
   text-decoration: none;
@@ -127,7 +127,7 @@ body::before {
   margin-bottom: 20px;
 }
 .home-btn:hover {
-  background: #cc0000;
+  background: #1d4ed8;
 }
 .results table {
   width: 100%;
@@ -136,7 +136,7 @@ body::before {
   color: white;
 }
 .results th, .results td {
-  border: 1px solid red;
+  border: 1px solid #2563eb;
   padding: 10px;
   text-align: center;
 }
