@@ -27,9 +27,9 @@ export const SEATS_PER_BUS = 28;
    twice each way. Each bus does one leg and comes back on the
    opposite leg, so four buses cover the timetable. */
 export const DAILY_TRIPS = [
-  { code: 'DC1', origin: 'Dhaka', destination: 'Chittagong', departure_time: '08:00:00', arrival_time: '14:00:00', bus_id: 'BUS1', fare: 1200 },
+  { code: 'DC1', origin: 'Dhaka', destination: 'Chittagong', departure_time: '10:00:00', arrival_time: '16:00:00', bus_id: 'BUS1', fare: 1200 },
   { code: 'DC2', origin: 'Dhaka', destination: 'Chittagong', departure_time: '23:00:00', arrival_time: '05:00:00', bus_id: 'BUS3', fare: 1200 },
-  { code: 'CD1', origin: 'Chittagong', destination: 'Dhaka', departure_time: '08:00:00', arrival_time: '14:00:00', bus_id: 'BUS3', fare: 1200 },
+  { code: 'CD1', origin: 'Chittagong', destination: 'Dhaka', departure_time: '10:00:00', arrival_time: '16:00:00', bus_id: 'BUS3', fare: 1200 },
   { code: 'CD2', origin: 'Chittagong', destination: 'Dhaka', departure_time: '23:00:00', arrival_time: '05:00:00', bus_id: 'BUS1', fare: 1200 },
   { code: 'DS1', origin: 'Dhaka', destination: 'Sylhet', departure_time: '08:00:00', arrival_time: '15:00:00', bus_id: 'BUS2', fare: 1000 },
   { code: 'DS2', origin: 'Dhaka', destination: 'Sylhet', departure_time: '23:00:00', arrival_time: '06:00:00', bus_id: 'BUS4', fare: 1000 },
