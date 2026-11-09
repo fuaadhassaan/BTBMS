@@ -22,6 +22,9 @@ function renderGreeting() {
 
 renderGreeting();
 setInterval(renderGreeting, 60000);
+// The console fills in the signed-in person's name once the session is
+// checked; greet them by name straight away rather than a minute later.
+new MutationObserver(renderGreeting).observe(document.body, { attributes: true, attributeFilter: ['data-role-name'] });
 
 /* =============================================================
    Numbers that count up to their new value

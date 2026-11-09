@@ -1,18 +1,12 @@
-/* Who can sign in, and which console each ID opens.
+/* The consoles, and how each role looks on the landing page.
 
-   Only the ID and its roles live here. Passwords are checked by the
-   console itself (console-app.js, via staff.js), so there is one copy of that
-   rule rather than two. Passengers never sign in, so they are not here. */
+   Who may sign in lives in the database (`staff`, see staff.js), not
+   here; passwords are checked by the console. Passengers never sign in. */
 
 export const ROLES = {
   admin: { label: 'Admin', accent: '#ff4d4d', text: '#ffd6d6', page: 'admin.html' },
   cmanager: { label: 'Counter Manager', accent: '#ff4d4d', text: '#ffd6d6', page: 'cmanager.html' },
   company: { label: 'Company Manager', accent: '#b37bff', text: '#ead9ff', page: 'company.html' }
-};
-
-export const ACCOUNTS = {
-  AD1: { roles: ['admin'] },
-  CM1: { roles: ['cmanager'] }
 };
 
 /* The keys the landing page and the consoles share. */

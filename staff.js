@@ -13,10 +13,10 @@
    sum and compares. PBKDF2 is deliberately slow, so a stolen hash
    takes far longer to guess than a plain SHA-256 one would.
 
-   First run: the two original accounts (AD1, CM1) work with their old
-   passwords until that ID exists in `staff`. The first successful
-   sign-in writes the account into `staff` (hashed), and from then on
-   only the stored hash counts, so a changed password sticks.
+   Only accounts stored in `staff` can sign in. (The original demo
+   logins that once bootstrapped the first accounts are gone: their
+   passwords were visible in the site's code.) New staff are created by
+   an Admin under Users.
 
    Every change made in a console is written to `audit` with who made
    it, what it touched and when.
@@ -24,7 +24,7 @@
 
 import { db } from './firebase-init.js';
 import {
-  doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp,
+  doc, getDoc, updateDoc, addDoc, collection, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
 export const STAFF = 'staff';
@@ -34,11 +34,6 @@ export const ROLE_LABELS = { admin: 'Admin', cmanager: 'Counter Manager', compan
 /* Where a Counter Manager's counter is. */
 export const COUNTER_LOCATIONS = ['Dhaka', 'Chittagong', 'Sylhet'];
 const ITERATIONS = 150000;
-
-const FIRST_RUN = {
-  AD1: { role: 'admin', name: 'Administrator', password: '141' },
-  CM1: { role: 'cmanager', name: 'Counter Manager', password: 'CD1' },
-};
 
 export const normaliseId = id => String(id || '').trim().toUpperCase();
 
@@ -91,8 +86,8 @@ export async function lookupRoles(id) {
   const key = normaliseId(id);
   if (!key) return [];
   const record = await getStaff(key);
-  if (record) return record.active === false ? [] : [record.role];
-  return FIRST_RUN[key] ? [FIRST_RUN[key].role] : [];
+  if (!record || record.active === false) return [];
+  return [record.role];
 }
 
 /* Signs someone in to a console. Resolves to { ok, user } or
@@ -107,24 +102,6 @@ export async function authenticate(id, password, role) {
     if (!(await checkPassword(record, password))) return { ok: false, reason: 'Wrong User ID or password.' };
     updateDoc(doc(db, STAFF, key), { last_login_at: serverTimestamp() }).catch(() => {});
     return { ok: true, user: { id: key, name: record.name || key, role: record.role, counter: record.counter || '' } };
-  }
-
-  const first = FIRST_RUN[key];
-  if (first && first.role === role && first.password === password) {
-    // First sign-in of an original account: move it into `staff`.
-    await setDoc(doc(db, STAFF, key), {
-      staff_id: key,
-      name: first.name,
-      role: first.role,
-      phone: '',
-      email: '',
-      active: true,
-      ...(await passwordFields(password)),
-      created_at: serverTimestamp(),
-      updated_at: serverTimestamp(),
-      last_login_at: serverTimestamp(),
-    });
-    return { ok: true, user: { id: key, name: first.name, role: first.role }, firstRun: true };
   }
 
   return { ok: false, reason: 'Wrong User ID or password.' };

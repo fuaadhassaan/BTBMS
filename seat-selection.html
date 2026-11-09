@@ -207,7 +207,12 @@
       .map(t => `<li><b>${t.refundPercent ? `${t.refundPercent}% refund` : 'No refund'}</b>: ${t.label.charAt(0).toLowerCase()}${t.label.slice(1)}</li>`)
       .join('');
 
-    const tripId = new URLSearchParams(window.location.search).get('trip_id') || 'TR1';
+    // Without a trip there is nothing to book: back to the search.
+    const tripId = new URLSearchParams(window.location.search).get('trip_id') || '';
+    if (!tripId) {
+      window.location.replace('ticket-booking.html');
+      await new Promise(() => {}); // stop here; the page is leaving
+    }
     const seatsContainer = document.getElementById('seats');
     const passengerList = document.getElementById('passengerList');
     const selCount = document.getElementById('selCount');

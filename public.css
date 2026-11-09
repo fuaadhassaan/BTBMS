@@ -1654,3 +1654,11 @@ a {
   0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
   80%, 100% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
 }
+
+/* Phones: the clock steps aside so the top bar fits (the live-dot rule
+   above would otherwise show it again). */
+@media (max-width: 680px) {
+  .topbar .clock {
+    display: none;
+  }
+}

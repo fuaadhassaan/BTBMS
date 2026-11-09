@@ -133,7 +133,8 @@ function scheduleRender() {
 
 function listen(label, ref, assign) {
   onSnapshot(ref, snapshot => {
-    assign(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    // 'estimate': a just-written server time shows at once instead of null.
+    assign(snapshot.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) })));
     scheduleRender();
   }, error => {
     console.error(label, error);
@@ -1520,7 +1521,7 @@ async function startSession() {
     state.user = result.user;
     saveSession();
     setAuditActor(state.user);
-    audit('sign-in', 'staff', state.user.id, result.firstRun ? 'First sign-in; account moved into the user list' : '');
+    audit('sign-in', 'staff', state.user.id, '');
   } else {
     let session = null;
     try {
