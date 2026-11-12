@@ -34,7 +34,7 @@ The three consoles share the same code with their role fixed at the top of each 
 
 ## How it runs
 
-- Static site on Vercel (auto-deploys from `main`), data in Firebase Firestore (project `btbms-b79f0`), updates in real time.
+- Static site on Vercel (auto-deploys from `main`), data in Firebase Firestore (project `dticket-b79f0`), updates in real time.
 - **Timetable:** `config.js` holds the 8 daily trips (times, buses, fares). The GitHub Action `.github/workflows/daily-trips.yml` runs `scripts/generate-trips.mjs` at 00:05 Dhaka every night to keep 14 days on sale; site visits also top it up.
 - **Cancellation policy:** `config.js` (90% > 24 h, 50% 6–24 h, none after).
 - **Staff sign-in:** accounts live in the `staff` collection with salted PBKDF2 password hashes; create them in Admin → Users.
